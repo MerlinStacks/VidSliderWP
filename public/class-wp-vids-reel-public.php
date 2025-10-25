@@ -136,7 +136,7 @@ class Wp_Vids_Reel_Public {
                             class="wp-vids-reel-video" 
                             src="<?php echo esc_url( $video_url ); ?>"
                             <?php echo $atts['show_controls'] ? 'controls' : ''; ?>
-                            <?php echo $atts['autoplay'] && $index === 0 ? 'autoplay muted' : ''; ?>
+                            <?php echo $index === 0 ? 'autoplay muted playsinline' : ''; ?>
                             preload="metadata"
                         >
                             <?php _e( 'Your browser does not support the video tag.', 'wp-vids-reel' ); ?>

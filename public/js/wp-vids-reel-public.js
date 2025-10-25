@@ -19,6 +19,8 @@
             this.sliderSpeed = parseInt(this.container.data('slider-speed')) || 5000;
             this.autoplayTimer = null;
             this.isTransitioning = false;
+            this.slideWidth = 0;
+            this.isScrolling = false;
             
             this.init();
         }
@@ -28,22 +30,53 @@
                 return; // No need for slider functionality with only one slide
             }
             
-            this.bindEvents();
-            this.startAutoplay();
+            // Set up smooth scrolling
+            this.setupSmoothScrolling();
             
-            // Pause on hover
-            this.container.on('mouseenter', () => this.pauseAutoplay());
-            this.container.on('mouseleave', () => this.startAutoplay());
+            // Calculate slide width after DOM is ready
+            $(window).on('load resize', () => {
+                this.calculateSlideWidth();
+            });
+            
+            this.bindEvents();
+            
+            // Autoplay is disabled for horizontal layout since all videos are visible
+            // this.startAutoplay();
+            
+            // Pause on hover - not needed for horizontal layout
+            // this.container.on('mouseenter', () => this.pauseAutoplay());
+            // this.container.on('mouseleave', () => this.startAutoplay());
             
             // Handle video events
             this.videos.on('play', () => this.pauseAutoplay());
-            this.videos.on('ended', () => this.nextSlide());
+            // Remove video ended event to prevent automatic sliding
             
             // Initialize keyboard navigation
             this.initKeyboardNavigation();
             
             // Initialize touch/swipe support
             this.initTouchSupport();
+        }
+        
+        setupSmoothScrolling() {
+            // Add smooth scrolling behavior
+            this.slider.css({
+                'scroll-behavior': 'smooth',
+                'scroll-snap-type': 'x mandatory'
+            });
+            
+            // Add scroll snap to slides
+            this.slides.css({
+                'scroll-snap-align': 'start'
+            });
+        }
+        
+        calculateSlideWidth() {
+            // Calculate the width of each slide including margins
+            if (this.slides.length > 0) {
+                const firstSlide = this.slides.first();
+                this.slideWidth = firstSlide.outerWidth(true);
+            }
         }
         
         bindEvents() {
@@ -65,63 +98,47 @@
         }
         
         goToSlide(index) {
-            if (this.isTransitioning || index === this.currentSlide) {
+            if (this.isScrolling || index === this.currentSlide) {
                 return;
             }
             
-            this.isTransitioning = true;
+            this.isScrolling = true;
             
-            // Pause current video
-            const currentVideo = this.slides.eq(this.currentSlide).find('.wp-vids-reel-video')[0];
-            if (currentVideo) {
-                currentVideo.pause();
-            }
+            // Calculate scroll position
+            const scrollPosition = index * this.slideWidth;
             
-            // Update slides
-            this.slides.removeClass('active');
-            this.slides.eq(index).addClass('active');
-            
-            // Update thumbnails
-            this.thumbnailBtns.removeClass('active');
-            this.thumbnailBtns.eq(index).addClass('active');
-            
-            // Update current slide
-            this.currentSlide = index;
-            
-            // Reset transition flag after animation
-            setTimeout(() => {
-                this.isTransitioning = false;
-            }, 500);
-            
-            // Restart autoplay
-            this.startAutoplay();
+            // Scroll to the slide
+            this.slider.animate({
+                scrollLeft: scrollPosition
+            }, 500, () => {
+                this.isScrolling = false;
+                this.currentSlide = index;
+                
+                // Update thumbnails
+                this.thumbnailBtns.removeClass('active');
+                this.thumbnailBtns.eq(index).addClass('active');
+            });
         }
         
         nextSlide() {
-            const nextIndex = (this.currentSlide + 1) % this.totalSlides;
+            const nextIndex = Math.min(this.currentSlide + 1, this.totalSlides - 1);
             this.goToSlide(nextIndex);
         }
         
         prevSlide() {
-            const prevIndex = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides;
+            const prevIndex = Math.max(this.currentSlide - 1, 0);
             this.goToSlide(prevIndex);
         }
         
         startAutoplay() {
-            this.pauseAutoplay();
-            
-            // Only autoplay if no video is currently playing
-            const currentVideo = this.slides.eq(this.currentSlide).find('.wp-vids-reel-video')[0];
-            if (currentVideo && !currentVideo.paused) {
-                return;
-            }
-            
-            this.autoplayTimer = setTimeout(() => {
-                this.nextSlide();
-            }, this.sliderSpeed);
+            // Autoplay is disabled for horizontal layout since all videos are visible
+            // This method is kept for compatibility but does nothing
+            return;
         }
         
         pauseAutoplay() {
+            // Autoplay is disabled for horizontal layout since all videos are visible
+            // This method is kept for compatibility but does nothing
             if (this.autoplayTimer) {
                 clearTimeout(this.autoplayTimer);
                 this.autoplayTimer = null;
@@ -131,7 +148,7 @@
         initKeyboardNavigation() {
             $(document).on('keydown', (e) => {
                 // Only handle keys when this slider is in focus or visible
-                if (!$.contains(this.container[0], document.activeElement) && 
+                if (!$.contains(this.container[0], document.activeElement) &&
                     !this.container.is(':visible')) {
                     return;
                 }
@@ -147,12 +164,21 @@
                         break;
                     case 32: // Space
                         e.preventDefault();
-                        const currentVideo = this.slides.eq(this.currentSlide).find('.wp-vids-reel-video')[0];
-                        if (currentVideo) {
-                            if (currentVideo.paused) {
-                                currentVideo.play();
-                            } else {
-                                currentVideo.pause();
+                        // Find the currently visible video in the viewport
+                        const sliderRect = this.slider[0].getBoundingClientRect();
+                        const visibleSlide = this.slides.filter(function() {
+                            const slideRect = this.getBoundingClientRect();
+                            return !(slideRect.right < sliderRect.left || slideRect.left > sliderRect.right);
+                        }).first();
+                        
+                        if (visibleSlide.length) {
+                            const currentVideo = visibleSlide.find('.wp-vids-reel-video')[0];
+                            if (currentVideo) {
+                                if (currentVideo.paused) {
+                                    currentVideo.play();
+                                } else {
+                                    currentVideo.pause();
+                                }
                             }
                         }
                         break;
@@ -164,11 +190,11 @@
             let touchStartX = 0;
             let touchEndX = 0;
             
-            this.container.on('touchstart', (e) => {
+            this.slider.on('touchstart', (e) => {
                 touchStartX = e.originalEvent.touches[0].clientX;
             });
             
-            this.container.on('touchend', (e) => {
+            this.slider.on('touchend', (e) => {
                 touchEndX = e.originalEvent.changedTouches[0].clientX;
                 this.handleSwipe();
             });
@@ -194,9 +220,10 @@
             this.prevBtn.off('click');
             this.nextBtn.off('click');
             this.thumbnailBtns.off('click');
-            this.container.off('mouseenter mouseleave');
-            this.videos.off('play ended');
+            this.videos.off('play');
             $(document).off('keydown');
+            $(window).off('load resize');
+            this.slider.off('touchstart touchend');
         }
     }
     

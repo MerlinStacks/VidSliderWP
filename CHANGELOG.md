@@ -5,6 +5,16 @@ All notable changes to WP Vids Reel will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-10-25
+
+### Changed
+- Changed video container to match video dimensions instead of using fixed aspect ratio
+- Updated slider layout to display all videos in a horizontal row
+- Implemented autoplay for the first video
+- Added smooth scrolling behavior with scroll-snap functionality
+- Updated JavaScript to work with the new horizontal layout
+- Enhanced responsive design for better mobile experience
+
 ## [1.0.0] - 2024-10-18
 
 ### Added

@@ -15,24 +15,35 @@
 .wp-vids-reel-slider {
     position: relative;
     width: 100%;
-    height: 0;
-    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    height: auto;
+    min-height: 300px; /* Minimum height to ensure visibility */
+    overflow-x: auto; /* Enable horizontal scrolling */
+    display: flex; /* Use flexbox for horizontal layout */
+    gap: 10px; /* Add spacing between videos */
+    scroll-behavior: smooth; /* Enable smooth scrolling */
+    scroll-snap-type: x mandatory; /* Enable snap scrolling on horizontal axis */
+    -webkit-overflow-scrolling: touch; /* Improve scrolling experience on iOS */
+    scrollbar-width: thin; /* Use thinner scrollbar on Firefox */
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Custom scrollbar colors */
 }
 
 /* Slide styles */
 .wp-vids-reel-slide {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+    position: relative;
+    flex: 0 0 auto; /* Don't shrink or grow, maintain natural size */
+    width: 400px; /* Fixed width for each video slide */
+    height: 300px; /* Fixed height for each video slide */
+    opacity: 1; /* All slides visible */
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 4px;
+    overflow: hidden;
+    scroll-snap-align: start; /* Snap to the start of each slide */
+    scroll-snap-stop: always; /* Always stop at snap points */
 }
 
+/* Active state is no longer needed for opacity but kept for compatibility */
 .wp-vids-reel-slide.active {
     opacity: 1;
 }
@@ -43,6 +54,7 @@
     height: 100%;
     object-fit: contain;
     background: #000;
+    border-radius: 4px;
 }
 
 /* Video title overlay */
@@ -60,7 +72,7 @@
     line-height: 1.4;
 }
 
-/* Navigation buttons */
+/* Navigation buttons - repositioned for horizontal scrolling */
 .wp-vids-reel-navigation {
     position: absolute;
     top: 50%;
@@ -68,7 +80,7 @@
     width: 100%;
     display: flex;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0 10px;
     pointer-events: none;
     z-index: 10;
 }
@@ -237,6 +249,11 @@
         font-size: 14px;
         padding: 15px 12px 12px;
     }
+    
+    .wp-vids-reel-slide {
+        width: 350px;
+        height: 263px;
+    }
 }
 
 @media screen and (max-width: 768px) {
@@ -271,6 +288,11 @@
     .wp-vids-reel-thumbnail {
         width: 60px;
         height: 45px;
+    }
+    
+    .wp-vids-reel-slide {
+        width: 300px;
+        height: 225px;
     }
 }
 
@@ -310,6 +332,15 @@
     .wp-vids-reel-thumbnail {
         width: 50px;
         height: 38px;
+    }
+    
+    .wp-vids-reel-slide {
+        width: 250px;
+        height: 188px;
+    }
+    
+    .wp-vids-reel-slider {
+        gap: 8px;
     }
 }
 
@@ -375,13 +406,21 @@
         position: relative;
         opacity: 1;
         height: auto;
-        padding-bottom: 56.25%;
+        width: 400px;
+        margin-bottom: 20px;
     }
     
     .wp-vids-reel-video {
-        position: absolute;
-        top: 0;
-        left: 0;
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+    
+    .wp-vids-reel-slider {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        overflow-x: visible;
     }
 }
 
@@ -425,4 +464,23 @@
         width: 90px;
         height: 68px;
     }
+}
+
+/* Custom scrollbar styling for webkit browsers */
+.wp-vids-reel-slider::-webkit-scrollbar {
+    height: 8px;
+}
+
+.wp-vids-reel-slider::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.wp-vids-reel-slider::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.wp-vids-reel-slider::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
 }
