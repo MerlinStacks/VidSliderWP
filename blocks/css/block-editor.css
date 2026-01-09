@@ -1,0 +1,302 @@
+/* Modern 2026-style Block Editor Styles */
+
+:root {
+    --reel-it-primary: #2271b1;
+    --reel-it-surface: #ffffff;
+    --reel-it-bg: #f8f9fa;
+    --reel-it-border: #e2e4e7;
+    --reel-it-text: #1e1e1e;
+    --reel-it-text-muted: #757575;
+    --reel-it-radius-lg: 12px;
+    --reel-it-radius-md: 8px;
+    --reel-it-radius-sm: 4px;
+    --reel-it-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --reel-it-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.reel-it-block-preview {
+    border: 1px solid var(--reel-it-border);
+    border-radius: var(--reel-it-radius-lg);
+    padding: 24px;
+    text-align: center;
+    background: var(--reel-it-bg);
+    min-height: 240px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Empty State */
+.reel-it-no-videos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--reel-it-text-muted);
+}
+
+.reel-it-no-videos-icon {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: rgba(34, 113, 177, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-it-no-videos-icon .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: var(--reel-it-primary);
+}
+
+.reel-it-no-videos p {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.reel-it-selected-videos h4 {
+    margin: 0 0 16px 0;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--reel-it-text-muted);
+    font-weight: 600;
+    text-align: left;
+}
+
+/* Feed Selector Modernized */
+.reel-it-feed-selector {
+    margin-bottom: 24px;
+    background: var(--reel-it-surface);
+    padding: 16px;
+    border-radius: var(--reel-it-radius-md);
+    border: 1px solid var(--reel-it-border);
+}
+
+.reel-it-feed-selector-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: nowrap;
+}
+
+.reel-it-feed-selector-header label {
+    width: 100%;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--reel-it-text);
+    font-size: 12px;
+}
+
+/* Video Item Card - Horizontal */
+.reel-it-video-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid var(--reel-it-border);
+    border-radius: var(--reel-it-radius-md);
+    margin-bottom: 8px;
+    background: var(--reel-it-surface);
+    transition: all 0.2s ease;
+    box-shadow: var(--reel-it-shadow-sm);
+}
+
+.reel-it-video-item:hover {
+    border-color: var(--reel-it-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--reel-it-shadow-md);
+}
+
+.reel-it-video-preview {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    margin-right: 12px;
+    border-radius: var(--reel-it-radius-sm);
+    overflow: hidden;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.reel-it-video-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reel-it-video-placeholder {
+    color: #999;
+}
+
+.reel-it-video-info {
+    flex: 1;
+    min-width: 0;
+    /* Text truncation fix */
+    text-align: left;
+}
+
+.reel-it-video-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+    font-size: 13px;
+    color: var(--reel-it-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reel-it-video-mime {
+    font-size: 10px;
+    color: var(--reel-it-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Library and Grid */
+.reel-it-video-selector {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0 4px;
+    /* Space for focus rings */
+}
+
+/* Custom Scrollbar for Selector */
+.reel-it-video-selector::-webkit-scrollbar {
+    width: 6px;
+}
+
+.reel-it-video-selector::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.reel-it-video-selector::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.reel-it-search {
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+    padding-bottom: 10px;
+}
+
+.reel-it-video-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 columns in sidebar usually fits better */
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.reel-it-library-item {
+    border: 1px solid var(--reel-it-border);
+    border-radius: var(--reel-it-radius-md);
+    background: var(--reel-it-surface);
+    overflow: hidden;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.reel-it-library-item:hover {
+    border-color: var(--reel-it-primary);
+    box-shadow: var(--reel-it-shadow-md);
+}
+
+.reel-it-library-preview {
+    width: 100%;
+    aspect-ratio: 16/9;
+    height: auto;
+    margin-bottom: 0;
+    background: #f0f0f0;
+    overflow: hidden;
+    position: relative;
+    border-bottom: 1px solid var(--reel-it-border);
+}
+
+.reel-it-library-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.reel-it-library-item:hover .reel-it-library-preview img {
+    transform: scale(1.05);
+}
+
+.reel-it-library-info {
+    padding: 8px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.reel-it-library-title {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--reel-it-text);
+}
+
+/* Viewport Control Styles */
+.reel-it-viewport-control .components-button-group {
+    display: flex;
+    width: 100%;
+}
+
+.reel-it-viewport-control .components-button {
+    flex: 1;
+    justify-content: center;
+    padding: 0 4px;
+}
+
+.reel-it-viewport-control .components-toggle-control {
+    margin-top: 12px;
+}
+
+/* Component specific styles */
+.components-button.reel-it-upload-button {
+    width: 100%;
+    justify-content: center;
+}
+
+.components-spinner {
+    margin: 0 auto;
+}
+
+/* Full width primary button in grid items */
+.reel-it-library-item .components-button {
+    width: 100%;
+    justify-content: center;
+    font-size: 11px;
+    height: 28px;
+    line-height: 26px;
+    padding: 0 8px;
+}
+
+/* Loading State */
+.reel-it-loading {
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    color: var(--reel-it-primary);
+}

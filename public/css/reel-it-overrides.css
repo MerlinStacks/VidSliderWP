@@ -1,0 +1,37 @@
+/* Force hide navigation buttons as per user request */
+.reel-it-navigation,
+.reel-it-prev,
+.reel-it-next {
+    display: none !important;
+}
+
+/* Ensure play button overlay transitions smoothly */
+.reel-it-video-overlay {
+    transition: opacity 0.3s ease;
+    opacity: 1;
+    pointer-events: none;
+    /* Allow clicks to pass through to container/video but button catches them */
+}
+
+/* Correctly handle pointer events for the play button itself */
+.reel-it-play-button {
+    pointer-events: auto;
+    /* Enable clicking on the button */
+    cursor: pointer;
+}
+
+/* When playing, hide overlay and disable interactions */
+.reel-it-video-container.playing .reel-it-video-overlay {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.reel-it-video-container.playing .reel-it-play-button {
+    pointer-events: none;
+    /* Disable clicking when hidden */
+}
+
+/* Hide unwanted control buttons (bottom right circles) */
+.reel-it-controls-container {
+    display: none !important;
+}

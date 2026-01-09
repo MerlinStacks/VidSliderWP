@@ -1,0 +1,575 @@
+/* Public Styles for Reel It - Horizontal Carousel Design */
+
+/* Main container */
+.reel-it-container {
+    position: relative;
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+    background: transparent !important;
+    overflow: visible;
+}
+
+/* Videos container */
+.reel-it-slider {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-scrolling: touch;
+}
+
+/* Video tile styles - SIMPLIFIED FOR STABILITY */
+.reel-it-slide,
+.vsfw-video-card {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+
+    /* Responsive Grid Sizing via Padding */
+    box-sizing: border-box;
+    padding: 0 calc(var(--reel-it-video-gap, 15px) / 2);
+
+    /* Use injected variable, default to 3 if missing */
+    flex: 0 0 calc(100% / var(--reel-it-columns-desktop, 3));
+    width: calc(100% / var(--reel-it-columns-desktop, 3));
+    min-width: 150px;
+    max-width: none;
+
+    transition: box-shadow 0.3s ease;
+    scroll-snap-align: start;
+}
+
+@media screen and (max-width: 1024px) {
+    /* Tablet can optionally inherit desktop or have its own logic. 
+       For now, we keep it same as desktop to respect the user's "Viewport" setting 
+       unless we add a tablet control later. */
+}
+
+@media screen and (max-width: 480px) {
+
+    .reel-it-slide,
+    .vsfw-video-card {
+        flex: 0 0 calc(100% / var(--reel-it-columns-mobile, 1.5));
+        width: calc(100% / var(--reel-it-columns-mobile, 1.5));
+    }
+
+    /* Adjust container padding on mobile to align edges */
+    .reel-it-container {
+        padding: 0 10px;
+    }
+}
+
+.vsfw-video-card:hover {
+    /* Removed transform */
+    box-shadow: none;
+}
+
+/* Active slide state */
+.reel-it-slide.active {
+    /* No border or shadow for active state */
+    box-shadow: none;
+    z-index: 1;
+}
+
+/* Video element styles */
+.reel-it-video {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 9 / 16;
+    /* Default to vertical video ratio */
+    object-fit: contain;
+    background: #1a1a1a;
+    border-radius: var(--reel-it-border-radius, 0px);
+    transition: none;
+    /* Disable transitions on video */
+    position: relative;
+    display: block;
+    transform: translateZ(0);
+    /* Clean layer promotion */
+}
+
+/* Loading/Error states */
+.reel-it-video.loading {
+    opacity: 0.7;
+    position: relative;
+}
+
+.reel-it-video.loading::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    animation: reel-it-spin 1s linear infinite;
+    z-index: 1;
+}
+
+.reel-it-video.error {
+    opacity: 0.5;
+    background: #333;
+}
+
+.reel-it-video.error::after {
+    content: '⚠️';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: #fff;
+    z-index: 1;
+}
+
+/* Video overlay and controls */
+.reel-it-video-container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-it-video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Hide overlay when playing */
+.reel-it-video-container.playing .reel-it-video-overlay {
+    display: none !important;
+}
+
+.reel-it-play-button {
+    background: transparent;
+    border: 2px solid #FFFFFF;
+    color: #FFFFFF;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.65;
+    pointer-events: all;
+}
+
+.reel-it-play-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.reel-it-controls-container {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+}
+
+.reel-it-control-button {
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0.8;
+}
+
+.reel-it-control-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+/* Mute/Unmute toggle */
+.reel-it-mute-svg {
+    display: block;
+}
+
+.reel-it-unmute-svg {
+    display: none;
+}
+
+.reel-it-video-container.muted .reel-it-mute-svg {
+    display: none;
+}
+
+.reel-it-video-container.muted .reel-it-unmute-svg {
+    display: block;
+}
+
+/* Navigation */
+.reel-it-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 0 10px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.reel-it-prev,
+.reel-it-next {
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    pointer-events: all;
+    font-size: 18px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.reel-it-prev {
+    left: 20px;
+}
+
+.reel-it-next {
+    right: 20px;
+}
+
+.reel-it-prev:hover,
+.reel-it-next:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.reel-it-prev .dashicons,
+.reel-it-next .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.reel-it-thumbnails {
+    display: none;
+}
+
+@keyframes reel-it-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media screen and (max-width: 1024px) {
+    .reel-it-container {
+        margin: 15px auto;
+        padding: 0 10px;
+    }
+
+
+
+    .reel-it-prev,
+    .reel-it-next {
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .reel-it-container {
+        margin: 10px auto;
+        padding: 0 8px;
+    }
+
+
+
+    .reel-it-prev,
+    .reel-it-next {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .reel-it-container {
+        margin: 5px auto;
+        padding: 0 5px;
+    }
+
+
+
+    .reel-it-prev,
+    .reel-it-next {
+        width: 35px;
+        height: 35px;
+        font-size: 12px;
+    }
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.reel-it-container:focus-visible {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+.reel-it-slider::-webkit-scrollbar {
+    height: 8px;
+}
+
+.reel-it-slider::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.reel-it-slider::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.reel-it-slider::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* -------------------------------------------------------------------------- */
+/* SINGLE PRODUCT CARD OVERLAY
+/* -------------------------------------------------------------------------- */
+
+/* Responsive Product Card */
+.reel-it-product-card {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    /* Full width minus margins */
+    background: rgba(255, 255, 255, 0.95);
+    /* Slightly more opaque */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    z-index: 10;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(0);
+    opacity: 1;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    max-width: 320px;
+    /* Constrain max width on desktop */
+    margin: 0 auto;
+    /* Center if constrained */
+}
+
+/* On Desktop, align left or right? Using left margin from before.
+   Let's keep it simple: it spans the bottom. On desktop we might want it smaller.
+*/
+
+.reel-it-product-card:hover {
+    background: #ffffff;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.reel-it-product-thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8fafc;
+    flex-shrink: 0;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.reel-it-product-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reel-it-product-info {
+    flex: 1;
+    min-width: 0;
+    /* Crucial for text-overflow to work in flex child */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.reel-it-product-title {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+    margin-bottom: 2px;
+}
+
+.reel-it-product-price {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6366f1;
+    line-height: 1.2;
+}
+
+.reel-it-product-price del {
+    color: #94a3b8;
+    font-weight: 400;
+    margin-right: 4px;
+    font-size: 11px;
+}
+
+.reel-it-product-action {
+    width: 28px;
+    height: 28px;
+    background: #0f172a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.reel-it-product-card:hover .reel-it-product-action {
+    background: #6366f1;
+    transform: scale(1.1);
+}
+
+.reel-it-product-action .dashicons {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+}
+
+/* Mobile Tweaks */
+@media screen and (max-width: 480px) {
+    .reel-it-product-card {
+        bottom: 8px;
+        left: 8px;
+        right: 8px;
+        padding: 6px;
+        gap: 8px;
+    }
+
+    .reel-it-product-thumb {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+    }
+
+    .reel-it-product-title {
+        font-size: 12px;
+    }
+
+    .reel-it-product-price {
+        font-size: 11px;
+    }
+
+    .reel-it-product-action {
+        width: 24px;
+        height: 24px;
+    }
+
+    .reel-it-product-action .dashicons {
+        font-size: 12px;
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* LOADING SPINNER
+/* -------------------------------------------------------------------------- */
+.reel-it-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    z-index: 50;
+    transition: opacity 0.3s ease;
+}
+
+.reel-it-container:not(.loading) .reel-it-loader {
+    display: none;
+}
+
+.reel-it-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #6366f1;
+    animation: reel-it-spin 0.8s linear infinite;
+}
+
+@keyframes reel-it-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

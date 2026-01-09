@@ -1,0 +1,1186 @@
+/**
+ * Reel It - Ultra Modern Dashboard Theme (2025 Edition)
+ * A breakdown of standard WordPress admin patterns in favor of a SaaS-like experience.
+ */
+
+:root {
+    /* Modern Color Palette - Indigo & Slate */
+    --vids-primary: #6366f1;
+    /* Indigo 500 */
+    --vids-primary-hover: #4f46e5;
+    /* Indigo 600 */
+    --vids-secondary: #0f172a;
+    /* Slate 900 */
+    --vids-surface: #ffffff;
+    --vids-background: #f8fafc;
+    /* Slate 50 */
+    --vids-border: #e2e8f0;
+    /* Slate 200 */
+    --vids-text-main: #1e293b;
+    /* Slate 800 */
+    --vids-text-muted: #64748b;
+    /* Slate 500 */
+    --vids-success: #10b981;
+    /* Emerald 500 */
+    --vids-danger: #ef4444;
+    /* Red 500 */
+    --vids-warning: #f59e0b;
+    /* Amber 500 */
+
+    /* Elevations & Shadows */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-color: 0 10px 15px -3px rgba(99, 102, 241, 0.2), 0 4px 6px -4px rgba(99, 102, 241, 0.1);
+
+    /* Spacing & Radius */
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --radius-full: 9999px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* RESET & LAYOUT FIXES
+/* -------------------------------------------------------------------------- */
+
+/* Hide standard WP notices within our page context to prevent layout shifts */
+.reel-it-settings-wrap .notice,
+.reel-it-settings-wrap .updated,
+.reel-it-settings-wrap .error {
+    display: none !important;
+}
+
+.reel-it-settings-wrap {
+    margin: 2rem auto;
+    max-width: 1400px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--vids-text-main);
+    padding: 0 1rem;
+    box-sizing: border-box;
+}
+
+.reel-it-settings-wrap * {
+    box-sizing: border-box;
+}
+
+/* -------------------------------------------------------------------------- */
+/* HEADER AREA
+/* -------------------------------------------------------------------------- */
+
+.reel-it-header {
+    background: transparent;
+    padding: 0 0 2rem 0;
+    margin-bottom: 0;
+    border: none;
+    box-shadow: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reel-it-header::before {
+    display: none;
+}
+
+.reel-it-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--vids-secondary);
+    letter-spacing: -0.025em;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, var(--vids-secondary) 0%, var(--vids-primary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.reel-it-header-description p {
+    font-size: 1.1rem;
+    color: var(--vids-text-muted);
+    font-weight: 400;
+    margin-top: 0.5rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* MAIN CONTENT CARD
+/* -------------------------------------------------------------------------- */
+
+.reel-it-tabs-container,
+.reel-it-feeds-section {
+    background: var(--vids-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--vids-border);
+    overflow: hidden;
+    position: relative;
+    /* Animation */
+    animation: fade-in-up 0.4s ease-out forwards;
+}
+
+/* Glass effect decorative blob */
+.reel-it-tabs-container::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* NAVIGATION TABS (Floating Pills)
+/* -------------------------------------------------------------------------- */
+
+.reel-it-tabs {
+    background: transparent;
+    padding: 1.5rem 2rem 0 2rem;
+    border-bottom: 1px solid var(--vids-border);
+    gap: 1rem;
+}
+
+.reel-it-tabs::after {
+    display: none;
+}
+
+.reel-it-tab {
+    background: transparent;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--vids-text-muted);
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius-full);
+    transition: all 0.2s ease;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.reel-it-tab::before {
+    display: none;
+}
+
+/* Remove old underlines */
+.reel-it-tab:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.reel-it-tab:hover {
+    color: var(--vids-primary);
+    background: rgba(99, 102, 241, 0.05);
+    transform: translateY(-1px);
+}
+
+.reel-it-tab.active {
+    background: var(--vids-primary);
+    color: #fff;
+    box-shadow: var(--shadow-color);
+}
+
+.reel-it-tab.active .dashicons,
+.reel-it-tab.active:hover .dashicons {
+    color: #fff;
+    transform: scale(1.1);
+}
+
+/* -------------------------------------------------------------------------- */
+/* CONTENT PANES
+/* -------------------------------------------------------------------------- */
+
+.reel-it-tab-content {
+    position: relative;
+    z-index: 1;
+    padding: 3rem;
+    min-height: 400px;
+}
+
+.reel-it-tab-pane {
+    display: none;
+    animation: fade-in 0.3s ease-out;
+}
+
+.reel-it-tab-pane.active {
+    display: block;
+}
+
+/* -------------------------------------------------------------------------- */
+/* FORM ELEMENTS (Modern)
+/* -------------------------------------------------------------------------- */
+
+.reel-it-form-row {
+    margin-bottom: 1.5rem;
+}
+
+.reel-it-form-row label {
+    display: block;
+    font-weight: 600;
+    color: var(--vids-secondary);
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.reel-it-form-row .description {
+    color: var(--vids-text-muted);
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+/* Inputs */
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    display: block;
+    width: 100%;
+    border-radius: var(--radius-sm) !important;
+    border: 1px solid var(--vids-border) !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.95rem !important;
+    box-shadow: var(--shadow-xs) !important;
+    transition: all 0.2s ease !important;
+    background: #fff !important;
+    margin: 0 !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--vids-primary) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+    outline: none !important;
+}
+
+/* Toggle Switch (Replacing Standard Checkboxes) */
+input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3rem !important;
+    height: 1.75rem !important;
+    background: var(--vids-border);
+    border-radius: var(--radius-full) !important;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    border: none !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    vertical-align: middle;
+    margin-right: 1rem;
+}
+
+input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 0.25rem;
+    left: 0.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+input[type="checkbox"]:checked {
+    background: var(--vids-primary);
+}
+
+input[type="checkbox"]:checked::after {
+    transform: translateX(1.25rem);
+}
+
+/* Range Sliders */
+input[type="range"] {
+    width: 100%;
+    background: transparent;
+    height: 6px;
+    border-radius: var(--radius-full);
+}
+
+/* Button Upgrades */
+.button.button-primary {
+    background: var(--vids-primary) !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--radius-sm) !important;
+    color: white !important;
+    padding: 0.75rem 1.5rem !important;
+    font-weight: 600 !important;
+    text-shadow: none !important;
+    box-shadow: var(--shadow-color) !important;
+    transition: all 0.2s ease !important;
+    height: auto !important;
+    font-size: 0.95rem !important;
+    line-height: 1.4 !important;
+}
+
+.button.button-primary:hover {
+    background: var(--vids-primary-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 15px 20px -3px rgba(99, 102, 241, 0.3) !important;
+}
+
+.button.button-secondary {
+    background: #fff !important;
+    border: 1px solid var(--vids-border) !important;
+    color: var(--vids-text-main) !important;
+    padding: 0.75rem 1.25rem !important;
+    border-radius: var(--radius-sm) !important;
+    height: auto !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    box-shadow: var(--shadow-xs) !important;
+    transition: all 0.2s ease !important;
+}
+
+.button.button-secondary:hover {
+    background: var(--vids-background) !important;
+    border-color: var(--vids-text-muted) !important;
+}
+
+/* -------------------------------------------------------------------------- */
+/* GALLERY GRID / FEEDS
+/* -------------------------------------------------------------------------- */
+
+.reel-it-feeds-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    /* Wider list, Sidebar on right */
+    gap: 0;
+    background: var(--vids-background);
+    min-height: 600px;
+}
+
+.reel-it-feeds-list {
+    background: transparent;
+    padding: 2rem;
+    border-right: 1px solid var(--vids-border);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.reel-it-feed-item {
+    background: white;
+    border: 1px solid var(--vids-border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    /* Flex layout */
+    align-items: flex-start;
+    /* Align top */
+    gap: 1.5rem;
+    position: relative;
+    animation: fade-in-up 0.5s ease-out backwards;
+}
+
+/* Staggered animation delays for up to 10 items */
+.reel-it-feed-item:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.reel-it-feed-item:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.reel-it-feed-item:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.reel-it-feed-item:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+.reel-it-feed-item:nth-child(5) {
+    animation-delay: 0.3s;
+}
+
+.reel-it-feed-item::before {
+    display: none;
+}
+
+.reel-it-feed-item:hover {
+    border-color: var(--vids-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Thumbnail Preview */
+.reel-it-feed-preview {
+    flex-shrink: 0;
+    width: 140px;
+    height: 80px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--vids-background);
+    border: 1px solid var(--vids-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-it-feed-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reel-it-feed-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+}
+
+.reel-it-feed-placeholder .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: var(--vids-text-muted);
+}
+
+/* Feed Content */
+.reel-it-feed-content {
+    flex-grow: 1;
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.reel-it-feed-info {
+    flex-grow: 1;
+}
+
+.reel-it-feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.reel-it-feed-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--vids-secondary);
+}
+
+.reel-it-feed-description {
+    font-size: 0.9rem;
+    color: var(--vids-text-muted);
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.reel-it-feed-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.reel-it-video-count {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    background: var(--vids-background);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--vids-text-muted);
+    border: 1px solid var(--vids-border);
+}
+
+.reel-it-feed-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.reel-it-feed-editor {
+    background: white;
+    padding: 2rem;
+    border-left: 1px solid var(--vids-border);
+    box-shadow: none;
+    position: sticky;
+    top: 0;
+}
+
+.reel-it-feed-editor h4 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    color: var(--vids-secondary);
+}
+
+/* Highlight effect when editing */
+.reel-it-feed-editor.highlight-edit {
+    animation: pulse-border 1s infinite;
+}
+
+/* -------------------------------------------------------------------------- */
+/* ANIMATIONS
+/* -------------------------------------------------------------------------- */
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-border {
+    0% {
+        border-color: var(--vids-border);
+    }
+
+    50% {
+        border-color: var(--vids-primary);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    100% {
+        border-color: var(--vids-border);
+    }
+}
+
+.reel-it-notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 10000;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    border-left: 4px solid var(--vids-primary);
+}
+
+.reel-it-notification.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.reel-it-notification-success {
+    border-left-color: var(--vids-success);
+}
+
+.reel-it-notification-error {
+    border-left-color: var(--vids-danger);
+}
+
+.reel-it-notification .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.reel-it-notification-success .dashicons {
+    color: var(--vids-success);
+}
+
+.reel-it-notification-error .dashicons {
+    color: var(--vids-danger);
+}
+
+.reel-it-notification-message {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--vids-text-main);
+}
+
+/* Shortcode Snippet */
+.reel-it-shortcode-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--vids-background);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--vids-border);
+    margin-left: auto;
+    /* Push to right if in flex container */
+    max-width: 100%;
+}
+
+.reel-it-shortcode {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--vids-primary);
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reel-it-copy-shortcode {
+    padding: 4px !important;
+    min-height: auto !important;
+    line-height: 1 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--vids-text-muted) !important;
+}
+
+.reel-it-copy-shortcode:hover {
+    color: var(--vids-primary) !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+    transform: none !important;
+}
+
+.reel-it-copy-shortcode .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* DARK MODE (True Dark Theme)
+/* -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --vids-secondary: #f8fafc;
+        --vids-surface: #1e293b;
+        /* Slate 800 */
+        --vids-background: #0f172a;
+        /* Slate 900 */
+        --vids-border: #334155;
+        /* Slate 700 */
+        --vids-text-main: #f1f5f9;
+        --vids-text-muted: #94a3b8;
+    }
+
+    body,
+    html {
+        background: var(--vids-background);
+    }
+
+    .reel-it-settings-wrap input[type="text"],
+    .reel-it-settings-wrap input[type="number"],
+    .reel-it-settings-wrap textarea,
+    .reel-it-settings-wrap select {
+        background: #0f172a !important;
+        border-color: #334155 !important;
+        color: white !important;
+    }
+
+    .reel-it-feed-item,
+    .reel-it-feed-editor,
+    .reel-it-tabs-container,
+    .reel-it-feeds-section {
+        background: var(--vids-surface);
+        border-color: var(--vids-border);
+    }
+
+    .reel-it-feed-preview {
+        background: var(--vids-background);
+        border-color: var(--vids-border);
+    }
+
+    .reel-it-feed-placeholder {
+        background: #0f172a;
+    }
+
+    .button.button-secondary {
+        background: var(--vids-surface) !important;
+        border-color: var(--vids-border) !important;
+        color: white !important;
+    }
+
+    .reel-it-video-count {
+        background: var(--vids-background);
+        border-color: var(--vids-border);
+    }
+
+    .reel-it-notification {
+        background: var(--vids-surface);
+    }
+
+    /* Dark Mode Modal */
+    .reel-it-modal-content {
+        background: var(--vids-surface);
+        color: var(--vids-text-main);
+    }
+
+    .reel-it-modal-header {
+        border-bottom-color: var(--vids-border);
+    }
+
+    .reel-it-modal-close {
+        color: var(--vids-text-muted);
+    }
+
+    .reel-it-modal-footer {
+        border-top-color: var(--vids-border);
+        background: var(--vids-background);
+    }
+
+    .reel-it-manage-video-item {
+        background: var(--vids-background);
+        border-color: var(--vids-border);
+    }
+
+    h2#reel-it-modal-title {
+        color: var(--vids-text-main);
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/* VIDEO MANAGER MODAL
+/* -------------------------------------------------------------------------- */
+
+.reel-it-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-it-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1;
+}
+
+.reel-it-modal-content {
+    position: relative;
+    z-index: 2;
+    background: white;
+    width: 90%;
+    max-width: 900px;
+    height: 85vh;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-color);
+    display: flex;
+    flex-direction: column;
+    animation: modal-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-pop {
+    0% {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.reel-it-modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--vids-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reel-it-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--vids-secondary);
+}
+
+.reel-it-modal-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: var(--radius-full);
+    transition: all 0.2s;
+    color: var(--vids-text-muted);
+}
+
+.reel-it-modal-close:hover {
+    background: var(--vids-background);
+    color: var(--vids-danger);
+}
+
+.reel-it-modal-body {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    background: var(--vids-background);
+    /* Subtle bg for grid */
+}
+
+.reel-it-modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid var(--vids-border);
+    text-align: right;
+    background: white;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Video Grid in Modal */
+.reel-it-video-toolbar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.reel-it-video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.reel-it-manage-video-item {
+    background: white;
+    border: 1px solid var(--vids-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.reel-it-manage-video-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--vids-primary);
+}
+
+.reel-it-manage-video-thumb {
+    height: 120px;
+    background: #000;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-it-manage-video-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reel-it-manage-video-info {
+    padding: 1rem;
+}
+
+.reel-it-manage-video-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.reel-it-manage-video-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+}
+
+.reel-it-remove-video-btn {
+    color: var(--vids-danger);
+    font-size: 0.85rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.reel-it-remove-video-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Drag Handle for Sortable */
+.reel-it-drag-handle {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: grab;
+    z-index: 10;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-it-drag-handle:hover {
+    background: var(--vids-primary);
+    transform: scale(1.1);
+}
+
+.reel-it-drag-handle:active {
+    cursor: grabbing;
+}
+
+.reel-it-drag-handle .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Sortable Placeholder */
+.reel-it-sortable-placeholder {
+    background: rgba(99, 102, 241, 0.1);
+    border: 2px dashed var(--vids-primary);
+    border-radius: var(--radius-md);
+    min-height: 180px;
+}
+
+/* Dragging State */
+.reel-it-manage-video-item.ui-sortable-helper {
+    transform: rotate(2deg) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    border-color: var(--vids-primary);
+    z-index: 1000;
+}
+
+/* -------------------------------------------------------------------------- */
+/* PRODUCT TAGGING MODAL
+/* -------------------------------------------------------------------------- */
+
+.reel-it-product-search-container {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+#reel-it-product-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: var(--vids-surface);
+    border: 1px solid var(--vids-border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 100;
+    margin: 5px 0 0;
+    padding: 0;
+    list-style: none;
+    display: none;
+}
+
+#reel-it-product-results li {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--vids-border);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    transition: background 0.2s;
+}
+
+#reel-it-product-results li:hover {
+    background: var(--vids-background);
+}
+
+#reel-it-product-results li img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.reel-it-product-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    background: var(--vids-surface);
+    border: 1px solid var(--vids-border);
+    border-radius: var(--radius-sm);
+    min-height: 100px;
+}
+
+.reel-it-product-chip {
+    background: var(--vids-background);
+    border: 1px solid var(--vids-border);
+    border-radius: 20px;
+    padding: 5px 10px 5px 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    animation: fade-in 0.2s;
+}
+
+.reel-it-product-chip img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+}
+
+.reel-it-remove-tag {
+    cursor: pointer;
+    color: var(--vids-text-muted);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+}
+
+.reel-it-remove-tag:hover {
+    color: var(--vids-danger);
+    transform: scale(1.1);
+}
+
+.reel-it-tag-product-btn {
+    font-size: 0.85rem;
+    color: var(--vids-primary);
+    background: rgba(99, 102, 241, 0.1);
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.reel-it-tag-product-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+
+/* -------------------------------------------------------------------------- */
+/* ANALYTICS DASHBOARD
+/* -------------------------------------------------------------------------- */
+
+.reel-it-analytics-wrap .reel-it-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.reel-it-date-filter {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.reel-it-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.reel-it-stat-card {
+    background: white;
+    border: 1px solid var(--vids-border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+
+.reel-it-stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.reel-it-stat-icon {
+    font-size: 32px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--vids-primary), var(--vids-cyan));
+    color: white;
+    border-radius: var(--radius-md);
+}
+
+.reel-it-stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.reel-it-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--vids-secondary);
+    line-height: 1.2;
+}
+
+.reel-it-stat-label {
+    font-size: 0.875rem;
+    color: var(--vids-text-muted);
+}
+
+.reel-it-analytics-table {
+    margin-top: 1rem;
+}
+
+.reel-it-analytics-table th {
+    background: var(--vids-background);
+    font-weight: 600;
+    text-align: left;
+    padding: 1rem;
+}
+
+.reel-it-analytics-table td {
+    padding: 1rem;
+    vertical-align: middle;
+}
+
+.reel-it-no-data {
+    text-align: center;
+    padding: 3rem;
+    color: var(--vids-text-muted);
+    font-style: italic;
+}

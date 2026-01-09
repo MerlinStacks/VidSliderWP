@@ -1,0 +1,316 @@
+/* Frontend Block Styles */
+.reel-it-container {
+    position: relative;
+    max-width: 100%;
+    margin: 0 auto;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    
+    /* CSS Grid Variables */
+    --grid-columns-desktop: 4;
+    --grid-columns-tablet: 3;
+    --grid-columns-mobile: 2;
+}
+
+/* Override grid columns based on data attribute for backward compatibility */
+.reel-it-container[data-videos-per-row="1"] {
+    --grid-columns-desktop: 1;
+    --grid-columns-tablet: 1;
+    --grid-columns-mobile: 1;
+}
+
+.reel-it-container[data-videos-per-row="2"] {
+    --grid-columns-desktop: 2;
+    --grid-columns-tablet: 2;
+    --grid-columns-mobile: 1;
+}
+
+.reel-it-container[data-videos-per-row="3"] {
+    --grid-columns-desktop: 3;
+    --grid-columns-tablet: 2;
+    --grid-columns-mobile: 1;
+}
+
+.reel-it-container[data-videos-per-row="4"] {
+    --grid-columns-desktop: 4;
+    --grid-columns-tablet: 3;
+    --grid-columns-mobile: 2;
+}
+
+.reel-it-container[data-videos-per-row="5"] {
+    --grid-columns-desktop: 5;
+    --grid-columns-tablet: 3;
+    --grid-columns-mobile: 2;
+}
+
+.reel-it-container[data-videos-per-row="6"] {
+    --grid-columns-desktop: 6;
+    --grid-columns-tablet: 4;
+    --grid-columns-mobile: 2;
+}
+
+.reel-it-slider {
+    position: relative;
+    width: 100%;
+    /* Remove aspect-ratio and min-height to allow grid layout to control */
+    display: grid;
+    grid-template-columns: repeat(var(--grid-columns-desktop, 4), 1fr);
+    gap: 15px;
+}
+
+.reel-it-slide {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    opacity: 1; /* Show all slides by default */
+    visibility: visible; /* Ensure all slides are visible */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    /* Remove fixed aspect-ratio to preserve video's natural aspect ratio */
+    min-height: 200px;
+}
+
+.reel-it-slide.active {
+    /* Active video gets a subtle highlight */
+    box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.5);
+    z-index: 1;
+}
+
+.reel-it-video {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background: #000;
+}
+
+.reel-it-video-title {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+    color: #fff;
+    padding: 20px 15px 15px;
+    font-size: 16px;
+    font-weight: 500;
+    z-index: 2;
+}
+
+/* Navigation */
+.reel-it-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 0 10px;
+    z-index: 10;
+}
+
+.reel-it-prev,
+.reel-it-next {
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    pointer-events: all;
+}
+
+.reel-it-prev:hover,
+.reel-it-next:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.reel-it-prev .dashicons,
+.reel-it-next .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+/* Thumbnails */
+.reel-it-thumbnails {
+    display: flex;
+    gap: 8px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+}
+
+.reel-it-thumbnail {
+    flex: 0 0 auto;
+    width: 80px;
+    height: 60px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reel-it-thumbnail.active {
+    border-color: #0073aa;
+}
+
+.reel-it-thumbnail:hover {
+    border-color: #005a87;
+}
+
+.reel-it-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.reel-it-thumbnail-placeholder {
+    color: #666;
+}
+
+.reel-it-thumbnail-placeholder .dashicons {
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 1024px) {
+    /* Adjust grid columns for medium screens */
+    .reel-it-slider {
+        grid-template-columns: repeat(var(--grid-columns-tablet, 3), 1fr);
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .reel-it-navigation {
+        padding: 0 10px;
+    }
+    
+    .reel-it-prev,
+    .reel-it-next {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .reel-it-prev .dashicons,
+    .reel-it-next .dashicons {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+    }
+    
+    .reel-it-video-title {
+        font-size: 14px;
+        padding: 15px 10px 10px;
+    }
+    
+    .reel-it-thumbnails {
+        padding: 10px;
+        gap: 6px;
+    }
+    
+    .reel-it-thumbnail {
+        width: 60px;
+        height: 45px;
+    }
+    
+    /* Adjust grid columns for tablet screens */
+    .reel-it-slider {
+        grid-template-columns: repeat(var(--grid-columns-tablet, 3), 1fr);
+        gap: 12px;
+    }
+    
+    .reel-it-slide {
+        min-height: 180px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .reel-it-thumbnails {
+        padding: 8px;
+        gap: 4px;
+    }
+    
+    .reel-it-thumbnail {
+        width: 50px;
+        height: 38px;
+    }
+    
+    .reel-it-video-title {
+        font-size: 12px;
+        padding: 12px 8px 8px;
+    }
+    
+    /* Adjust grid columns for mobile screens */
+    .reel-it-slider {
+        grid-template-columns: repeat(var(--grid-columns-mobile, 2), 1fr);
+        gap: 10px;
+    }
+    
+    .reel-it-slide {
+        min-height: 160px;
+    }
+}
+
+/* Loading state */
+.reel-it-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #666;
+}
+
+/* Accessibility */
+.reel-it-prev:focus,
+.reel-it-next:focus,
+.reel-it-thumbnail:focus {
+    outline: 2px solid #0073aa;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .reel-it-prev,
+    .reel-it-next {
+        background: #000;
+        border: 2px solid #fff;
+    }
+    
+    .reel-it-thumbnail {
+        border-color: #fff;
+    }
+    
+    .reel-it-thumbnail.active {
+        border-color: #ff0;
+        background: #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .reel-it-slide {
+        transition: none;
+    }
+    
+    .reel-it-prev,
+    .reel-it-next,
+    .reel-it-thumbnail {
+        transition: none;
+    }
+}
