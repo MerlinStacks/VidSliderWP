@@ -145,14 +145,23 @@ class Reel_It_Database {
             ) );
             
             if ( $column_info && strpos( $column_info->COLUMN_TYPE, 'int(11)' ) !== false ) {
-                // Drop existing foreign key if it exists
-                $wpdb->query( "ALTER TABLE {$wpdb->prefix}reel_it_feed_videos DROP FOREIGN KEY IF EXISTS wp_reel_it_feed_videos_ibfk_2" );
-                
+                // Discover the actual FK constraint name instead of hardcoding.
+                $fk_name = $wpdb->get_var( $wpdb->prepare(
+                    "SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+                     WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND CONSTRAINT_TYPE = 'FOREIGN KEY'",
+                    DB_NAME,
+                    $this->feed_videos_table
+                ) );
+
+                if ( $fk_name ) {
+                    $wpdb->query( "ALTER TABLE {$this->feed_videos_table} DROP FOREIGN KEY {$fk_name}" );
+                }
+
                 // Modify the column to bigint(20) unsigned
-                $wpdb->query( "ALTER TABLE {$wpdb->prefix}reel_it_feed_videos MODIFY COLUMN video_id bigint(20) unsigned NOT NULL" );
-                
-                // Re-add the foreign key
-                $wpdb->query( "ALTER TABLE {$wpdb->prefix}reel_it_feed_videos ADD CONSTRAINT wp_reel_it_feed_videos_ibfk_2 FOREIGN KEY (video_id) REFERENCES {$wpdb->prefix}posts(ID) ON DELETE CASCADE" );
+                $wpdb->query( "ALTER TABLE {$this->feed_videos_table} MODIFY COLUMN video_id bigint(20) unsigned NOT NULL" );
+
+                // Re-add the foreign key using the dynamic table prefix.
+                $wpdb->query( "ALTER TABLE {$this->feed_videos_table} ADD CONSTRAINT {$wpdb->prefix}reel_it_feed_videos_ibfk_2 FOREIGN KEY (video_id) REFERENCES {$wpdb->prefix}posts(ID) ON DELETE CASCADE" );
             }
         }
     }
@@ -391,27 +400,30 @@ class Reel_It_Database {
      * @param    int    $feed_id    Feed ID
      * @return   array    List of videos
      */
-    public function get_feed_videos( $feed_id ) {
+    public function get_feed_videos( $feed_id, $limit = 0 ) {
         global $wpdb;
-        
-        // Why: guid is an immutable identifier — not a reliable URL. Resolve
-        // via wp_get_attachment_url() below instead.
+
+        $limit_clause = '';
+        if ( $limit > 0 ) {
+            $limit_clause = $wpdb->prepare( ' LIMIT %d', $limit );
+        }
+
         $videos = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT fv.*, p.post_title, p.post_mime_type
                 FROM {$wpdb->prefix}reel_it_feed_videos fv
                 INNER JOIN {$wpdb->prefix}posts p ON fv.video_id = p.ID
                 WHERE fv.feed_id = %d
-                ORDER BY fv.sort_order ASC, fv.id ASC",
+                ORDER BY fv.sort_order ASC, fv.id ASC
+                {$limit_clause}",
                 $feed_id
             )
         );
 
-        // Resolve correct URLs (respects CDN, domain changes, upload_url_path).
         foreach ( $videos as $video ) {
             $video->video_url = wp_get_attachment_url( $video->video_id );
         }
-        
+
         return $videos;
     }
 
@@ -558,48 +570,28 @@ class Reel_It_Database {
         $videos = array();
 
         if ( $query->have_posts() ) {
-            // Optimized fetching if we only have IDs or full objects
             $posts = $query->posts;
 
-            if ( $args['fields'] === 'ids' && ! empty( $posts ) ) {
-                // If we requested IDs but want to return structured data like title/url/etc, we need to fetch them.
-                // However, the original function returned a specific structure.
-                // If the caller requested 'ids', they probably just want the IDs? 
-                // But the return signature implies an array of video objects.
-                // If 'fields' => 'ids' is passed, WP_Query returns just IDs.
-                
-                // If we want to support what Block Secure does (fetch limited fields + cache), 
-                // we should allow this method to return what is requested.
-                // But this method returns ['videos' => [], 'total' => ...].
-                
-                // Let's stick to returning formatted video arrays, but optimise the fetch.
-                // If WP_Query returned IDs (because we passed fields=ids), we fetch details efficiently.
-                
-                // Check if $posts are IDs (integers/strings) or Objects
-                if ( is_numeric( $posts[0] ?? null ) ) {
-                    _prime_post_caches( $posts, false, false );
-                     $attachments = get_posts( array(
-                        'post_type' => 'attachment',
-                        'post__in' => $posts,
-                        'posts_per_page' => -1,
-                        'orderby' => 'post__in',
-                    ));
-                    $posts = $attachments;
-                }
+            if ( $args['fields'] === 'ids' && ! empty( $posts ) && is_numeric( $posts[0] ?? null ) ) {
+                _prime_post_caches( $posts, false, false );
+                $attachments = get_posts( array(
+                    'post_type'      => 'attachment',
+                    'post__in'       => $posts,
+                    'posts_per_page' => -1,
+                    'orderby'        => 'post__in',
+                ) );
+                $posts = $attachments;
             }
-            
+
             foreach ( $posts as $post ) {
                 $attachment_id = $post->ID;
-                
-                // Check permission if author arg was set (implied context) or if purely using generic query
-                // Privacy check usually happens outside, but here we just return data.
-                
+
                 $videos[] = array(
-                    'id' => $attachment_id,
-                    'title' => $post->post_title,
-                    'url' => wp_get_attachment_url( $attachment_id ),
+                    'id'        => $attachment_id,
+                    'title'     => $post->post_title,
+                    'url'       => wp_get_attachment_url( $attachment_id ),
                     'thumbnail' => wp_get_attachment_image_url( $attachment_id, 'thumbnail' ),
-                    'mime' => $post->post_mime_type,
+                    'mime'      => $post->post_mime_type,
                 );
             }
         }

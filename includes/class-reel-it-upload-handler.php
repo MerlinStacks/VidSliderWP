@@ -98,12 +98,16 @@ class Reel_It_Upload_Handler {
         // Check file size.
         $max_file_size       = isset( $options['max_file_size'] ) ? intval( $options['max_file_size'] ) : Reel_It::DEFAULT_MAX_FILE_SIZE;
         $max_file_size_bytes = $max_file_size * 1024 * 1024;
+        $server_limit        = wp_max_upload_size();
 
-        if ( $file['size'] > $max_file_size_bytes ) {
+        $effective_limit = min( $max_file_size_bytes, $server_limit );
+        $effective_mb    = round( $effective_limit / ( 1024 * 1024 ) );
+
+        if ( $file['size'] > $effective_limit ) {
             return new WP_Error(
                 'file_too_large',
                 /* translators: %d: Maximum file size in MB. */
-                sprintf( __( 'File is too large. Maximum size is %d MB.', 'reel-it' ), $max_file_size )
+                sprintf( __( 'File is too large. Maximum size is %d MB.', 'reel-it' ), $effective_mb )
             );
         }
 

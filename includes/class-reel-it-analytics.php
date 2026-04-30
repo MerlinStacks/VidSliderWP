@@ -61,7 +61,8 @@ class Reel_It_Analytics {
             PRIMARY KEY (id),
             KEY idx_video_id (video_id),
             KEY idx_event_type (event_type),
-            KEY idx_created_at (created_at)
+            KEY idx_created_at (created_at),
+            KEY idx_video_event_created (video_id, event_type, created_at)
         ) $charset_collate;";
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
@@ -94,6 +95,9 @@ class Reel_It_Analytics {
 
         $feed_id    = $data['feed_id'] ? absint( $data['feed_id'] ) : null;
         $product_id = $data['product_id'] ? absint( $data['product_id'] ) : null;
+
+        // Invalidate cached dashboards so new events appear promptly.
+        $this->clear_stats_cache();
 
         /* Why: wpdb->insert internally calls array_values() on $formats,
            so null entries shift subsequent format positions. Build dynamically. */
@@ -133,10 +137,48 @@ class Reel_It_Analytics {
 
         $cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
 
-        return $wpdb->query( $wpdb->prepare(
+        $deleted = $wpdb->query( $wpdb->prepare(
             "DELETE FROM {$this->table_name} WHERE created_at < %s",
             $cutoff
         ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+
+        if ( false !== $deleted ) {
+            $this->clear_stats_cache();
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Clear all cached analytics dashboard data.
+     *
+     * Why: instead of deleting individual transient keys (which fails on
+     * object-cache backends), we bump a shared version number so every
+     * existing key is considered stale on the next lookup.
+     *
+     * @since 1.7.1
+     */
+    private function clear_stats_cache() {
+        set_transient( 'reel_it_stats_version', time(), DAY_IN_SECONDS );
+    }
+
+    /**
+     * Shared cache-buster version for analytics dashboard data.
+     *
+     * Why: deleting transients by wildcard is unreliable on object-cache
+     * backends (Redis/Memcached). A version number lets us atomically
+     * invalidate every stats key at once.
+     *
+     * @since 1.7.1
+     * @return int
+     */
+    private function get_cache_version() {
+        $version = get_transient( 'reel_it_stats_version' );
+        if ( false === $version ) {
+            $version = time();
+            set_transient( 'reel_it_stats_version', $version, DAY_IN_SECONDS );
+        }
+        return (int) $version;
     }
 
     /**
@@ -150,6 +192,12 @@ class Reel_It_Analytics {
      * @return array
      */
     public function get_summary_stats( $days = 30 ) {
+        $cache_key = 'reel_it_stats_' . $days . '_' . $this->get_cache_version();
+        $cached    = get_transient( $cache_key );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
         global $wpdb;
 
         $date_limit = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
@@ -169,7 +217,7 @@ class Reel_It_Analytics {
         $total_plays       = intval( $row['total_plays'] );
         $total_completions = intval( $row['total_completions'] );
 
-        return array(
+        $result = array(
             'total_plays'       => $total_plays,
             'total_completions' => $total_completions,
             'total_clicks'      => intval( $row['total_clicks'] ),
@@ -177,6 +225,9 @@ class Reel_It_Analytics {
             'unique_visitors'   => intval( $row['unique_visitors'] ),
             'completion_rate'   => $total_plays > 0 ? round( ( $total_completions / $total_plays ) * 100, 1 ) : 0,
         );
+
+        set_transient( $cache_key, $result, MINUTE_IN_SECONDS * 5 );
+        return $result;
     }
 
     /**
@@ -188,6 +239,12 @@ class Reel_It_Analytics {
      * @return array
      */
     public function get_top_videos( $days = 30, $limit = 10 ) {
+        $cache_key = 'reel_it_top_' . $days . '_' . $limit . '_' . $this->get_cache_version();
+        $cached    = get_transient( $cache_key );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
         global $wpdb;
 
         $date_limit = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
@@ -208,7 +265,6 @@ class Reel_It_Analytics {
             $limit
         ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 
-        // Why: batch-prime avoids N+1 get_post() calls inside the loop.
         $video_ids = wp_list_pluck( $results, 'video_id' );
         if ( ! empty( $video_ids ) ) {
             _prime_post_caches( array_map( 'intval', $video_ids ), false, false );
@@ -217,11 +273,12 @@ class Reel_It_Analytics {
         foreach ( $results as &$row ) {
             $post = get_post( $row['video_id'] );
             $row['title'] = $post ? $post->post_title : __( 'Deleted Video', 'reel-it' );
-            $row['completion_rate'] = $row['plays'] > 0 
-                ? round( ( $row['completions'] / $row['plays'] ) * 100, 1 ) 
+            $row['completion_rate'] = $row['plays'] > 0
+                ? round( ( $row['completions'] / $row['plays'] ) * 100, 1 )
                 : 0;
         }
 
+        set_transient( $cache_key, $results, MINUTE_IN_SECONDS * 5 );
         return $results;
     }
 
@@ -233,6 +290,12 @@ class Reel_It_Analytics {
      * @return array
      */
     public function get_daily_stats( $days = 30 ) {
+        $cache_key = 'reel_it_daily_' . $days . '_' . $this->get_cache_version();
+        $cached    = get_transient( $cache_key );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
         global $wpdb;
 
         $date_limit = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
@@ -250,6 +313,7 @@ class Reel_It_Analytics {
             $date_limit
         ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 
+        set_transient( $cache_key, $results, MINUTE_IN_SECONDS * 5 );
         return $results;
     }
 }

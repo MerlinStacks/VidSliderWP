@@ -266,7 +266,7 @@ class Reel_It_Public {
     private function resolve_videos( $atts ) {
         if ( ! empty( $atts['use_feed'] ) && ! empty( $atts['feed_id'] ) ) {
             $database    = Reel_It_Database::instance();
-            $feed_videos = $database->get_feed_videos( intval( $atts['feed_id'] ) );
+            $feed_videos = $database->get_feed_videos( intval( $atts['feed_id'] ), 100 );
 
             if ( empty( $feed_videos ) ) {
                 return '<p>' . __( 'No videos found in feed.', 'reel-it' ) . '</p>';
@@ -290,6 +290,9 @@ class Reel_It_Public {
                 return '<p>' . __( 'No videos selected.', 'reel-it' ) . '</p>';
             }
             $videos = is_array( $atts['videos'] ) ? $atts['videos'] : json_decode( $atts['videos'], true );
+            if ( json_last_error() !== JSON_ERROR_NONE ) {
+                return '<p>' . __( 'Invalid video configuration.', 'reel-it' ) . '</p>';
+            }
         }
 
         if ( empty( $videos ) ) {
@@ -367,9 +370,11 @@ class Reel_It_Public {
      * @since 1.4.0
      */
     public function ajax_track_event() {
-        // Why: this endpoint is registered for wp_ajax_nopriv_ — cached pages serve
-        // stale nonces that always fail verification. Rate limiting (L376-383) and
-        // transient dedup (L385-391) already guard against abuse.
+        $referer = wp_get_referer();
+        if ( false === $referer || ! str_starts_with( $referer, home_url( '/' ) ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid request origin', 'reel-it' ) ) );
+        }
+
         if ( is_user_logged_in() ) {
             check_ajax_referer( 'reel_it_nonce', 'nonce' );
         }
@@ -398,7 +403,8 @@ class Reel_It_Public {
         }
 
         // Rate limit: max 30 events per IP per minute to prevent bot spam.
-        $ip_hash = md5( $_SERVER['REMOTE_ADDR'] ?? 'unknown' );
+        $ip = $this->get_client_ip();
+        $ip_hash = md5( $ip );
         $rate_key = 'reel_it_rate_' . $ip_hash;
         $event_count = (int) get_transient( $rate_key );
         if ( $event_count >= 30 ) {
@@ -450,5 +456,34 @@ class Reel_It_Public {
             }
         }
         return $urls;
+    }
+
+    /**
+     * Get the real client IP, accounting for common proxy headers.
+     *
+     * @since  1.7.1
+     * @return string Client IP address.
+     */
+    private function get_client_ip() {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $trusted_proxies = apply_filters( 'reel_it_trusted_proxies', array() );
+
+        $headers = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP' );
+        foreach ( $headers as $header ) {
+            if ( ! empty( $_SERVER[ $header ] ) ) {
+                $forwarded = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+                $parts     = array_map( 'trim', explode( ',', $forwarded ) );
+                $candidate = $parts[0];
+                if ( filter_var( $candidate, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                    // Only trust proxy headers if REMOTE_ADDR is in the trusted proxy list.
+                    if ( in_array( $ip, $trusted_proxies, true ) ) {
+                        $ip = $candidate;
+                    }
+                }
+                break; // Use the first valid header only.
+            }
+        }
+
+        return $ip;
     }
 }

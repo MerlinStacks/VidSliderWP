@@ -55,7 +55,16 @@ class Reel_It_Ajax_Feeds {
         if ( empty( $name ) ) {
             wp_send_json_error( array( 'message' => __( 'Name required', 'reel-it' ) ) );
         }
-        $feed_id = $this->get_database()->create_feed( $name, $description );
+
+        $database = $this->get_database();
+        $existing = $database->get_feeds();
+        foreach ( $existing as $feed ) {
+            if ( strcasecmp( $feed->name, $name ) === 0 ) {
+                wp_send_json_error( array( 'message' => __( 'A gallery with this name already exists.', 'reel-it' ) ) );
+            }
+        }
+
+        $feed_id = $database->create_feed( $name, $description );
         if ( $feed_id ) {
             wp_send_json_success( array( 'message' => __( 'Feed created', 'reel-it' ), 'feed_id' => $feed_id ) );
         } else {
@@ -76,7 +85,16 @@ class Reel_It_Ajax_Feeds {
         if ( empty( $name ) || $feed_id <= 0 ) {
             wp_send_json_error( array( 'message' => __( 'Invalid data', 'reel-it' ) ) );
         }
-        if ( $this->get_database()->update_feed( $feed_id, $name, $description ) ) {
+
+        $database = $this->get_database();
+        $existing = $database->get_feeds();
+        foreach ( $existing as $feed ) {
+            if ( $feed->id !== $feed_id && strcasecmp( $feed->name, $name ) === 0 ) {
+                wp_send_json_error( array( 'message' => __( 'Another gallery with this name already exists.', 'reel-it' ) ) );
+            }
+        }
+
+        if ( $database->update_feed( $feed_id, $name, $description ) ) {
             wp_send_json_success( array( 'message' => __( 'Updated', 'reel-it' ) ) );
         } else {
             wp_send_json_error( array( 'message' => __( 'Failed', 'reel-it' ) ) );

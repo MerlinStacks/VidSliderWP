@@ -183,7 +183,11 @@ class Reel_It_Blocks_Secure {
             // Force 100% width if full width toggle is on
             $wrapper_attrs['style'] = 'width: 100%;';
         } elseif ( ! empty( $attributes['width'] ) ) {
-            $wrapper_attrs['style'] = 'width: ' . esc_attr( $attributes['width'] ) . ';';
+            // Only allow numeric values with valid CSS units.
+            $width = sanitize_text_field( $attributes['width'] );
+            if ( preg_match( '/^\d+(\.\d+)?(px|%|vw|vh|em|rem)$/', $width ) ) {
+                $wrapper_attrs['style'] = 'width: ' . esc_attr( $width ) . ';';
+            }
         }
 
         $wrapper_attributes = get_block_wrapper_attributes( $wrapper_attrs );

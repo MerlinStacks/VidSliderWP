@@ -3,7 +3,7 @@
     const { registerBlockType } = blocks;
     const { InspectorControls, MediaUpload, MediaUploadCheck } = blockEditor;
     const { PanelBody, Button, TextControl, RangeControl, ToggleControl, SelectControl, Spinner, Notice, SearchControl, Placeholder, ButtonGroup } = components;
-    const { createElement: el, Fragment } = element;
+    const { createElement: el, Fragment, useState, useEffect, useCallback, useRef } = element;
     const { useSelect } = data;
 
     // Helper: Viewport Control (Buttons + Half Toggle)
@@ -69,7 +69,7 @@
 
     // Video Uploader Component
     const VideoUploader = ({ onUpload, isLoading }) => {
-        const fileInputRef = React.useRef(null);
+        const fileInputRef = useRef(null);
 
         const handleFileSelect = (event) => {
             const file = event.target.files[0];
@@ -98,11 +98,11 @@
 
     // Feed Selector Component
     const FeedSelector = ({ feedId, onFeedChange }) => {
-        const [feeds, setFeeds] = React.useState([]);
-        const [loadingFeeds, setLoadingFeeds] = React.useState(false);
+        const [feeds, setFeeds] = useState([]);
+        const [loadingFeeds, setLoadingFeeds] = useState(false);
 
         // Load feeds
-        const loadFeeds = React.useCallback(() => {
+        const loadFeeds = useCallback(() => {
             setLoadingFeeds(true);
 
             const formData = new FormData();
@@ -126,7 +126,7 @@
         }, []);
 
         // Load initial feeds
-        React.useEffect(() => {
+        useEffect(() => {
             loadFeeds();
         }, [loadFeeds]);
 
@@ -169,13 +169,13 @@
 
     // Video Selector Component
     const VideoSelector = ({ videos, onSelect, onUpload, isLoading }) => {
-        const [search, setSearch] = React.useState('');
-        const [videoLibrary, setVideoLibrary] = React.useState([]);
-        const [loadingLibrary, setLoadingLibrary] = React.useState(false);
-        const [currentPage, setCurrentPage] = React.useState(1);
+        const [search, setSearch] = useState('');
+        const [videoLibrary, setVideoLibrary] = useState([]);
+        const [loadingLibrary, setLoadingLibrary] = useState(false);
+        const [currentPage, setCurrentPage] = useState(1);
 
         // Load video library
-        const loadVideoLibrary = React.useCallback((searchTerm = '', page = 1) => {
+        const loadVideoLibrary = useCallback((searchTerm = '', page = 1) => {
             setLoadingLibrary(true);
 
             const formData = new FormData();
@@ -205,12 +205,12 @@
         }, []);
 
         // Load initial videos
-        React.useEffect(() => {
+        useEffect(() => {
             loadVideoLibrary();
         }, [loadVideoLibrary]);
 
         // Handle search with debounce to avoid AJAX spam on fast typing
-        const searchTimerRef = React.useRef(null);
+        const searchTimerRef = useRef(null);
         const handleSearch = (value) => {
             setSearch(value);
             setCurrentPage(1);
@@ -280,12 +280,12 @@
 
     // Feed Preview Component (New)
     const FeedPreview = ({ feedId, videosPerRow }) => {
-        const [posts, setPosts] = React.useState([]);
-        const [loading, setLoading] = React.useState(false);
-        const [error, setError] = React.useState('');
-        const containerRef = React.useRef(null);
+        const [posts, setPosts] = useState([]);
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState('');
+        const containerRef = useRef(null);
 
-        React.useEffect(() => {
+        useEffect(() => {
             if (!feedId) return;
             setLoading(true);
             setPosts([]);
@@ -491,12 +491,12 @@
         },
 
         edit: function (props) {
-            const { attributes, setAttributes, className } = props;
-            const { videos, videosPerRow, videosPerRowMobile, useFeed, feedId, width, fullWidth } = attributes;
-            const { useBlockProps } = blockEditor;
+        const { attributes, setAttributes, className } = props;
+        const { videos, videosPerRow, videosPerRowMobile, useFeed, feedId, width, fullWidth } = attributes;
+        const { useBlockProps } = blockEditor;
 
-            const [isUploading, setIsUploading] = React.useState(false);
-            const [uploadError, setUploadError] = React.useState('');
+        const [isUploading, setIsUploading] = useState(false);
+        const [uploadError, setUploadError] = useState('');
 
             // Parse width into value and unit
             const getWidthParts = (w) => {

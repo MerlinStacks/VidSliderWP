@@ -65,6 +65,7 @@ class Reel_It_Ajax_Products {
                 }
             }
         }
+        wp_reset_postdata();
 
         wp_send_json_success( array( 'results' => $products ) );
     }

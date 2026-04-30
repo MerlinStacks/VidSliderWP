@@ -100,9 +100,15 @@ if ( ! defined( 'WPINC' ) ) {
 
                     if ( $linked_product ) :
                     ?>
-                        <a href="<?php echo esc_url( $linked_product->get_permalink() ); ?>" class="reel-it-product-card" target="_blank" data-product-id="<?php echo esc_attr( $linked_product->get_id() ); ?>">
+                        <a href="<?php echo esc_url( $linked_product->get_permalink() ); ?>" class="reel-it-product-card" target="_blank" rel="noopener noreferrer" data-product-id="<?php echo esc_attr( $linked_product->get_id() ); ?>">
                             <div class="reel-it-product-thumb">
-                                <?php echo wp_kses_post( $linked_product->get_image( 'thumbnail' ) ); ?>
+                                <?php
+                                $product_thumb = $linked_product->get_image(
+                                    'thumbnail',
+                                    array( 'loading' => 'lazy' )
+                                );
+                                echo wp_kses_post( $product_thumb );
+                                ?>
                             </div>
                             <div class="reel-it-product-info">
                                 <span class="reel-it-product-title"><?php echo esc_html( $linked_product->get_name() ); ?></span>

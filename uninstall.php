@@ -47,5 +47,9 @@ if ( false === $meta_result ) {
     error_log( 'Reel It: failed to delete plugin post meta during uninstall.' ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 }
 
+// Clear object caches so persistent backends (Redis/Memcached) don't serve stale data.
+wp_cache_delete( 'reel_it_all_feeds', 'reel_it' );
+wp_cache_delete( 'reel_it_feeds_thumbs', 'reel_it' );
+
 // Note: We don't delete uploaded videos as they are part of the media library
 // and users might want to keep them even after uninstalling the plugin

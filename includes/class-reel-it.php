@@ -194,17 +194,6 @@ class Reel_It {
     }
 
     /**
-     * Create database tables
-     *
-     * @since    1.1.1
-     * @access   private
-     */
-    private function create_database_tables() {
-        $database = Reel_It_Database::instance();
-        $database->create_tables();
-    }
-
-    /**
      * Run the loader to execute all of the hooks with WordPress.
      *
      * @since    1.0.0

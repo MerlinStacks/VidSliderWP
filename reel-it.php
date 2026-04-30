@@ -58,6 +58,9 @@ register_activation_hook( __FILE__, 'reel_it_activate' );
  * Check for database upgrades on admin init.
  */
 function reel_it_check_db_upgrade() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
     $installed_version = get_option( 'reel_it_db_version', '0' );
     if ( version_compare( $installed_version, REEL_IT_VERSION, '<' ) ) {
         reel_it_activate();
