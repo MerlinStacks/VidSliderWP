@@ -1382,9 +1382,14 @@
     z-index: 0;
 }
 
-.reel-it-settings-wrap > * {
+.reel-it-settings-wrap > *:not(.reel-it-modal) {
     position: relative;
     z-index: 1;
+}
+
+.reel-it-settings-wrap > .reel-it-modal {
+    position: fixed;
+    z-index: 10000;
 }
 
 .reel-it-header {

@@ -289,9 +289,10 @@ jQuery(document).ready(function ($) {
     // 4. VIDEO MANAGER MODAL (New)
     function initVideoModal() {
         let currentFeedId = 0;
+        const $videoModal = $('#reel-it-video-modal');
 
         function closeVideoModal() {
-            $('#reel-it-video-modal').fadeOut(200);
+            $videoModal.hide().addClass('reel-it-hidden');
             if (currentFeedId) {
                 updateFeedCardMeta(currentFeedId);
             }
@@ -304,7 +305,7 @@ jQuery(document).ready(function ($) {
             const feedName = $(this).data('name');
 
             $('#reel-it-modal-title').text(reelItSettings.strings.manageVideos + ': ' + feedName);
-            $('#reel-it-video-modal').fadeIn(200);
+            $videoModal.removeClass('reel-it-hidden').css('display', 'flex');
 
             loadFeedVideos(currentFeedId);
         });
@@ -316,7 +317,7 @@ jQuery(document).ready(function ($) {
         });
 
         $(document).on('keydown', function (e) {
-            if (e.key === 'Escape' && $('#reel-it-video-modal').is(':visible')) {
+            if (e.key === 'Escape' && $videoModal.is(':visible')) {
                 closeVideoModal();
             }
         });
@@ -525,12 +526,17 @@ jQuery(document).ready(function ($) {
     function initProductTagging() {
         let currentVideoId = 0;
         let taggedProducts = [];
+        const $productModal = $('#reel-it-product-modal');
+
+        function closeProductModal() {
+            $productModal.hide().addClass('reel-it-hidden');
+        }
 
         // Open Product Modal
         $(document).on('click', '.reel-it-tag-product-btn', function (e) {
             e.preventDefault();
             currentVideoId = $(this).data('video-id');
-            $('#reel-it-product-modal').fadeIn(200);
+            $productModal.removeClass('reel-it-hidden').css('display', 'flex');
 
             // Show single-product limitation notice above search
             const $notice = $('#reel-it-product-modal .reel-it-single-product-notice');
@@ -553,7 +559,7 @@ jQuery(document).ready(function ($) {
         // Close Product Modal
         $(document).on('click', '.reel-it-product-modal-close, .reel-it-product-modal-close-btn', function (e) {
             e.preventDefault();
-            $('#reel-it-product-modal').fadeOut(200);
+            closeProductModal();
         });
 
         // Search Products
@@ -640,7 +646,7 @@ jQuery(document).ready(function ($) {
             }, function (response) {
                 if (response.success) {
                     showNotification(reelItSettings.strings.tagsSaved, 'success');
-                    $('#reel-it-product-modal').fadeOut(200);
+                    closeProductModal();
                 } else {
                     showNotification(reelItSettings.strings.tagsSaveFailed, 'error');
                 }

@@ -695,13 +695,11 @@
                     if (!isBlack) {
                         var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                         targetImg.src = dataUrl;
+                        targetImg.removeAttribute('data-needs-poster');
+                        vc.classList.add('has-poster');
                     }
-                    targetImg.removeAttribute('data-needs-poster');
-                    vc.classList.add('has-poster');
                 } catch (e) {
-                    /* Why: tainted canvas or missing frame — just stop the shimmer */
-                    targetImg.removeAttribute('data-needs-poster');
-                    vc.classList.add('has-poster');
+                    /* Why: tainted canvas or missing frame — keep shimmer fallback instead of locking a black card */
                 }
                 cleanup();
             }

@@ -48,8 +48,6 @@
 
     transition: box-shadow 0.3s ease;
     scroll-snap-align: start;
-    content-visibility: auto;
-    contain-intrinsic-size: 360px 640px;
 }
 
 
