@@ -91,10 +91,10 @@ class Reel_It_Settings {
         // Enqueue Media Library
         wp_enqueue_media();
 
-        // Google Fonts: Inter
+        // Google Fonts: Plus Jakarta Sans
         wp_enqueue_style( 
             'reel-it-fonts', 
-            'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap', 
+            'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', 
             array(), 
             $this->version 
         );
@@ -344,4 +344,3 @@ class Reel_It_Settings {
         require __DIR__ . '/views/page-analytics.php';
     }
 }
-

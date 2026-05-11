@@ -12,6 +12,7 @@
  * @var array  $atts            Processed shortcode/block attributes.
  * @var array  $videos          Filtered video array (each: id, title, url, mime).
  * @var int    $total_slides    Count of $videos.
+ * @var array  $linked_products_by_video Map of video ID to linked WC product.
  * @var object $public_instance Reference to Reel_It_Public (for resolve_poster_url).
  *
  * @since 1.6.0
@@ -85,21 +86,8 @@ if ( ! defined( 'WPINC' ) ) {
                         </button>
                     </div>
 
-                    <?php
-                    // Fetch the first tagged product for the overlay card.
-                    $linked_product = null;
-                    if ( Reel_It::is_shop_active() ) {
-                        $product_ids = get_post_meta( $video_id, '_reel_it_linked_products', true );
-                        if ( is_array( $product_ids ) && ! empty( $product_ids ) ) {
-                            $product = wc_get_product( $product_ids[0] );
-                            if ( $product && $product->is_visible() ) {
-                                $linked_product = $product;
-                            }
-                        }
-                    }
-
-                    if ( $linked_product ) :
-                    ?>
+                    <?php $linked_product = $linked_products_by_video[ $video_id ] ?? null; ?>
+                    <?php if ( $linked_product ) : ?>
                         <a href="<?php echo esc_url( $linked_product->get_permalink() ); ?>" class="reel-it-product-card" target="_blank" rel="noopener noreferrer" data-product-id="<?php echo esc_attr( $linked_product->get_id() ); ?>">
                             <div class="reel-it-product-thumb">
                                 <?php

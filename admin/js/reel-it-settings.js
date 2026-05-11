@@ -27,6 +27,11 @@ jQuery(document).ready(function ($) {
             </div>
         `);
 
+        $notification.attr({
+            role: type === 'error' ? 'alert' : 'status',
+            'aria-live': type === 'error' ? 'assertive' : 'polite'
+        });
+
         $('body').append($notification);
 
         // Animate in
@@ -41,6 +46,17 @@ jQuery(document).ready(function ($) {
 
     // 1. TABS: Enhanced Tab Navigation
     function initTabs() {
+        $('.reel-it-tab').each(function () {
+            const tabId = $(this).data('tab');
+            $(this).attr({
+                role: 'tab',
+                'aria-controls': tabId,
+                'aria-selected': 'false'
+            });
+        });
+
+        $('.reel-it-tab-pane').attr('role', 'tabpanel');
+
         // Use document delegation for tabs to ensure they work even if DOM updates
         $(document).on('click', '.reel-it-tab', function (e) {
             e.preventDefault();
@@ -48,12 +64,29 @@ jQuery(document).ready(function ($) {
             activateTab(tabId);
         });
 
+        $(document).on('keydown', '.reel-it-tab', function (e) {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+                return;
+            }
+
+            const $tabs = $('.reel-it-tab');
+            const currentIndex = $tabs.index(this);
+            const direction = e.key === 'ArrowRight' ? 1 : -1;
+            const nextIndex = (currentIndex + direction + $tabs.length) % $tabs.length;
+            const $nextTab = $tabs.eq(nextIndex);
+
+            e.preventDefault();
+            activateTab($nextTab.data('tab'));
+            $nextTab.focus();
+        });
+
         function activateTab(tabId) {
             $('.reel-it-tab').removeClass('active');
-            $('.reel-it-tab-pane').removeClass('active');
+            $('.reel-it-tab').attr('aria-selected', 'false');
+            $('.reel-it-tab-pane').removeClass('active').attr('hidden', true);
 
-            $(`.reel-it-tab[data-tab="${tabId}"]`).addClass('active');
-            $(`#${tabId}`).addClass('active');
+            $(`.reel-it-tab[data-tab="${tabId}"]`).addClass('active').attr('aria-selected', 'true');
+            $(`#${tabId}`).addClass('active').removeAttr('hidden');
 
             localStorage.setItem('reelItActiveTab', tabId);
         }
@@ -257,6 +290,13 @@ jQuery(document).ready(function ($) {
     function initVideoModal() {
         let currentFeedId = 0;
 
+        function closeVideoModal() {
+            $('#reel-it-video-modal').fadeOut(200);
+            if (currentFeedId) {
+                updateFeedCardMeta(currentFeedId);
+            }
+        }
+
         // Open Modal
         $(document).on('click', '.reel-it-manage-videos', function (e) {
             e.preventDefault();
@@ -272,11 +312,12 @@ jQuery(document).ready(function ($) {
         // Close Modal — updates parent feed card count/thumb instead of reloading
         $(document).on('click', '.reel-it-modal-close, .reel-it-modal-close-btn, .reel-it-modal-overlay', function (e) {
             e.preventDefault();
-            $('#reel-it-video-modal').fadeOut(200);
+            closeVideoModal();
+        });
 
-            // Why: refresh only the affected card instead of the whole page
-            if (currentFeedId) {
-                updateFeedCardMeta(currentFeedId);
+        $(document).on('keydown', function (e) {
+            if (e.key === 'Escape' && $('#reel-it-video-modal').is(':visible')) {
+                closeVideoModal();
             }
         });
 

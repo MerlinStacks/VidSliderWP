@@ -38,6 +38,12 @@ class Reel_It_Ajax_Products {
 
         $term = isset( $_POST['term'] ) ? sanitize_text_field( wp_unslash( $_POST['term'] ) ) : '';
 
+        $cache_key = 'reel_it_product_search_' . md5( strtolower( $term ) );
+        $cached    = wp_cache_get( $cache_key, 'reel_it' );
+        if ( false !== $cached ) {
+            wp_send_json_success( array( 'results' => $cached ) );
+        }
+
         $args = array(
             'post_type'      => 'product',
             'post_status'    => 'publish',
@@ -67,6 +73,8 @@ class Reel_It_Ajax_Products {
         }
         wp_reset_postdata();
 
+        wp_cache_set( $cache_key, $products, 'reel_it', 60 );
+
         wp_send_json_success( array( 'results' => $products ) );
     }
 
@@ -86,6 +94,12 @@ class Reel_It_Ajax_Products {
         // BUG-04 fix: validate the post is actually an attachment
         if ( ! $video_id || get_post_type( $video_id ) !== 'attachment' ) {
             wp_send_json_error( array( 'message' => __( 'Invalid attachment', 'reel-it' ) ) );
+        }
+
+        $cache_key = 'reel_it_video_products_' . $video_id;
+        $cached    = wp_cache_get( $cache_key, 'reel_it' );
+        if ( false !== $cached ) {
+            wp_send_json_success( array( 'products' => $cached ) );
         }
 
         $product_ids = get_post_meta( $video_id, '_reel_it_linked_products', true );
@@ -110,6 +124,8 @@ class Reel_It_Ajax_Products {
             }
         }
 
+        wp_cache_set( $cache_key, $products, 'reel_it', 60 );
+
         wp_send_json_success( array( 'products' => $products ) );
     }
 
@@ -132,6 +148,7 @@ class Reel_It_Ajax_Products {
             : array();
 
         update_post_meta( $video_id, '_reel_it_linked_products', $product_ids );
+        wp_cache_delete( 'reel_it_video_products_' . $video_id, 'reel_it' );
 
         wp_send_json_success( array( 'message' => __( 'Products Saved', 'reel-it' ) ) );
     }

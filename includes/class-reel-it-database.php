@@ -401,6 +401,21 @@ class Reel_It_Database {
      * @return   array    List of videos
      */
     public function get_feed_videos( $feed_id, $limit = 0 ) {
+        $feed_id = (int) $feed_id;
+        $limit   = (int) $limit;
+
+        $last_changed = wp_cache_get( 'reel_it_feeds_last_changed', 'reel_it' );
+        if ( false === $last_changed ) {
+            $last_changed = microtime();
+            wp_cache_set( 'reel_it_feeds_last_changed', $last_changed, 'reel_it' );
+        }
+
+        $cache_key = 'reel_it_feed_videos_' . md5( $feed_id . '|' . $limit . '|' . $last_changed );
+        $cached    = wp_cache_get( $cache_key, 'reel_it' );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
         global $wpdb;
 
         $limit_clause = '';
@@ -423,6 +438,8 @@ class Reel_It_Database {
         foreach ( $videos as $video ) {
             $video->video_url = wp_get_attachment_url( $video->video_id );
         }
+
+        wp_cache_set( $cache_key, $videos, 'reel_it', 300 );
 
         return $videos;
     }
@@ -646,6 +663,7 @@ class Reel_It_Database {
         delete_transient( 'reel_it_feeds_data' );
         wp_cache_delete( 'reel_it_all_feeds', 'reel_it' );
         wp_cache_delete( 'reel_it_feeds_thumbs', 'reel_it' );
+        wp_cache_set( 'reel_it_feeds_last_changed', microtime(), 'reel_it' );
         // Individual feed caches expire via TTL (300s).
     }
 

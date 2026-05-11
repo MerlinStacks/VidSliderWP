@@ -122,6 +122,7 @@
             this.feedId = element.dataset.feedId || 0;
 
             this.slides = Array.from(element.querySelectorAll('.reel-it-slide'));
+            this.videoContainers = this.slides.map((slide) => slide.querySelector('.reel-it-video-container'));
             this.prevBtn = element.querySelector('.reel-it-prev');
             this.nextBtn = element.querySelector('.reel-it-next');
             this.thumbnailBtns = Array.from(element.querySelectorAll('.reel-it-thumbnail'));
@@ -179,8 +180,7 @@
          * @return {HTMLElement|null}
          */
         _vc(index) {
-            const slide = this.slides[index];
-            return slide ? slide.querySelector('.reel-it-video-container') : null;
+            return this.videoContainers[index] || null;
         }
 
         /**
@@ -250,7 +250,7 @@
                         this.checkActiveSlide();
                     }, 150);
                 }
-            });
+            }, { passive: true });
 
             /* 4. Product card click tracking */
             this._on(this.container, 'click', (e) => {
@@ -392,9 +392,9 @@
             }
 
             /* Pause & destroy other videos to save memory */
-            this.slides.forEach((slide, i) => {
+            this.slides.forEach((_, i) => {
                 if (i !== index) {
-                    const otherVc = slide.querySelector('.reel-it-video-container');
+                    const otherVc = this._vc(i);
                     if (otherVc) destroyVideo(otherVc);
                 }
             });
@@ -530,6 +530,7 @@
 
     /* Why: module-scoped so both init and beforeunload can access it */
     var viewportObs = null;
+    var sliderObs = null;
 
     document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () {
@@ -546,11 +547,35 @@
                 });
             }
 
-            initSliders(document);
+            function initSliderIfNeeded(el) {
+                if (!el || el.dataset.reelItInitialized) return;
+                if (el.querySelectorAll('.reel-it-slide').length === 0) return;
+
+                const slider = new VideoSlider(el);
+                sliders.push(slider);
+                el.dataset.reelItInitialized = 'true';
+            }
+
+            if ('IntersectionObserver' in window) {
+                sliderObs = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (!entry.isIntersecting) return;
+                        initSliderIfNeeded(entry.target);
+                        sliderObs.unobserve(entry.target);
+                    });
+                }, { rootMargin: '200px 0px', threshold: 0.01 });
+
+                document.querySelectorAll('.reel-it-container').forEach(function (el) {
+                    sliderObs.observe(el);
+                });
+            } else {
+                initSliders(document);
+            }
 
             window.addEventListener('beforeunload', function () {
                 sliders.forEach(function (s) { s.destroy(); });
                 if (viewportObs) viewportObs.disconnect();
+                if (sliderObs) sliderObs.disconnect();
             });
 
         }, 100);

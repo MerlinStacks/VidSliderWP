@@ -51,6 +51,15 @@ class Reel_It_Public {
     private $force_enqueue = false;
 
     /**
+     * Per-request cache for should_enqueue_assets().
+     *
+     * @since    1.7.2
+     * @access   private
+     * @var      bool|null
+     */
+    private $should_enqueue_assets_cache = null;
+
+    /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
@@ -78,18 +87,25 @@ class Reel_It_Public {
      * @return   bool
      */
     private function should_enqueue_assets() {
+        if ( null !== $this->should_enqueue_assets_cache ) {
+            return $this->should_enqueue_assets_cache;
+        }
+
         global $post;
-        
+
         // Check for block
         if ( has_block( 'reel-it/video-slider' ) ) {
+            $this->should_enqueue_assets_cache = true;
             return true;
         }
 
         // Check for shortcode
         if ( is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'reel_it' ) ) {
+            $this->should_enqueue_assets_cache = true;
             return true;
         }
 
+        $this->should_enqueue_assets_cache = false;
         return false;
     }
 
@@ -141,11 +157,7 @@ class Reel_It_Public {
             'reel_it_public',
             array(
                 'ajax_url' => admin_url( 'admin-ajax.php' ),
-                'nonce' => wp_create_nonce( 'reel_it_nonce' ),
-                'strings' => array(
-                    'shop' => __( 'Shop', 'reel-it' ),
-                    'close' => __( 'Close', 'reel-it' )
-                )
+                'nonce'    => wp_create_nonce( 'reel_it_nonce' ),
             )
         );
     }
@@ -182,6 +194,7 @@ class Reel_It_Public {
         $border_radius = isset( $options['border_radius'] ) ? intval( $options['border_radius'] ) : Reel_It::DEFAULT_BORDER_RADIUS;
         $video_gap     = isset( $options['video_gap'] ) ? intval( $options['video_gap'] ) : Reel_It::DEFAULT_VIDEO_GAP;
         $total_slides  = count( $videos );
+        $linked_products_by_video = $this->get_linked_products_for_videos( $videos );
 
         // Why: $public_instance lets the view partial call resolve_poster_url()
         // for both main posters and thumbnails without duplicating logic.
@@ -190,6 +203,70 @@ class Reel_It_Public {
         ob_start();
         include plugin_dir_path( __FILE__ ) . 'views/slider.php';
         return ob_get_clean();
+    }
+
+    /**
+     * Resolve linked product objects for each video in one pass.
+     *
+     * @since  1.7.2
+     * @param  array $videos Video list passed to the template.
+     * @return array<int,WC_Product> Map: video attachment ID => linked product.
+     */
+    private function get_linked_products_for_videos( $videos ) {
+        if ( ! Reel_It::is_shop_active() || empty( $videos ) ) {
+            return array();
+        }
+
+        $first_product_by_video = array();
+        $product_ids            = array();
+
+        foreach ( $videos as $video ) {
+            $video_id = isset( $video['id'] ) ? intval( $video['id'] ) : 0;
+            if ( ! $video_id ) {
+                continue;
+            }
+
+            $linked_ids = get_post_meta( $video_id, '_reel_it_linked_products', true );
+            if ( ! is_array( $linked_ids ) || empty( $linked_ids ) ) {
+                continue;
+            }
+
+            $first_product_id = intval( $linked_ids[0] );
+            if ( $first_product_id <= 0 ) {
+                continue;
+            }
+
+            $first_product_by_video[ $video_id ] = $first_product_id;
+            $product_ids[]                       = $first_product_id;
+        }
+
+        if ( empty( $product_ids ) ) {
+            return array();
+        }
+
+        $product_ids = array_values( array_unique( $product_ids ) );
+        _prime_post_caches( $product_ids, false, true );
+
+        $product_cache = array();
+        foreach ( $product_ids as $product_id ) {
+            $product = wc_get_product( $product_id );
+            if ( $product && $product->is_visible() ) {
+                $product_cache[ $product_id ] = $product;
+            }
+        }
+
+        if ( empty( $product_cache ) ) {
+            return array();
+        }
+
+        $linked_products = array();
+        foreach ( $first_product_by_video as $video_id => $product_id ) {
+            if ( isset( $product_cache[ $product_id ] ) ) {
+                $linked_products[ $video_id ] = $product_cache[ $product_id ];
+            }
+        }
+
+        return $linked_products;
     }
 
     /**
