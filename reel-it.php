@@ -3,7 +3,7 @@
  * Plugin Name: Reel It - Shoppable Video Slider
  * Plugin URI: https://customkings.com.au/reel-it
  * Description: A WordPress plugin for showcasing videos in a slider using the block editor with video upload functionality.
- * Version: 1.5.0
+ * Version: 1.6.0
  * Author: SLDevs
  * Author URI: https://customkings.com.au
  * License: GPL v2 or later
@@ -23,7 +23,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Currently plugin version.
  */
-define( 'REEL_IT_VERSION', '1.5.0' );
+define( 'REEL_IT_VERSION', '1.6.0' );
 
 /**
  * The core plugin class that is used to define internationalization,
