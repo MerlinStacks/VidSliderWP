@@ -65,7 +65,7 @@ if ( ! defined( 'WPINC' ) ) {
                         <!-- Show Controls -->
                         <div class="reel-it-form-row">
                             <div class="reel-it-toggle-row">
-                                <?php $controls = isset( $options['default_show_controls'] ) ? $options['default_show_controls'] : 0; ?>
+                                <?php $controls = isset( $options['default_show_controls'] ) ? $options['default_show_controls'] : 1; ?>
                                 <input type="checkbox" id="default_show_controls" name="reel_it_options[default_show_controls]" value="1" <?php checked( 1, $controls ); ?>>
                                 <label for="default_show_controls" class="reel-it-toggle-label"><?php esc_html_e( 'Show Controls', 'reel-it' ); ?></label>
                             </div>
@@ -75,7 +75,7 @@ if ( ! defined( 'WPINC' ) ) {
                         <!-- Show Thumbnails -->
                         <div class="reel-it-form-row">
                             <div class="reel-it-toggle-row">
-                                <?php $thumbs = isset( $options['default_show_thumbnails'] ) ? $options['default_show_thumbnails'] : 0; ?>
+                                <?php $thumbs = isset( $options['default_show_thumbnails'] ) ? $options['default_show_thumbnails'] : 1; ?>
                                 <input type="checkbox" id="default_show_thumbnails" name="reel_it_options[default_show_thumbnails]" value="1" <?php checked( 1, $thumbs ); ?>>
                                 <label for="default_show_thumbnails" class="reel-it-toggle-label"><?php esc_html_e( 'Show Thumbnails', 'reel-it' ); ?></label>
                             </div>

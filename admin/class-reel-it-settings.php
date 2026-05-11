@@ -311,12 +311,13 @@ class Reel_It_Settings {
         $sanitized = get_option( 'reel_it_options', array() );
         $checkbox_fields = array( 'default_autoplay', 'default_show_controls', 'default_show_thumbnails' );
         foreach ( $checkbox_fields as $field ) { $sanitized[$field] = isset( $input[$field] ) ? 1 : 0; }
-        if ( isset( $input['default_slider_speed'] ) ) { $sanitized['default_slider_speed'] = intval( $input['default_slider_speed'] ); }
-        if ( isset( $input['border_radius'] ) ) { $sanitized['border_radius'] = intval( $input['border_radius'] ); }
-        if ( isset( $input['video_gap'] ) ) { $sanitized['video_gap'] = intval( $input['video_gap'] ); }
+        if ( isset( $input['default_slider_speed'] ) ) { $sanitized['default_slider_speed'] = max( 1000, min( 10000, intval( $input['default_slider_speed'] ) ) ); }
+        if ( isset( $input['border_radius'] ) ) { $sanitized['border_radius'] = max( 0, min( 50, intval( $input['border_radius'] ) ) ); }
+        if ( isset( $input['video_gap'] ) ) { $sanitized['video_gap'] = max( 0, min( 100, intval( $input['video_gap'] ) ) ); }
         if ( isset( $input['default_videos_per_row'] ) ) { $sanitized['default_videos_per_row'] = max( 1, min( 6, intval( $input['default_videos_per_row'] ) ) ); }
         // Why: zero or negative values would block all uploads.
         if ( isset( $input['max_file_size'] ) ) { $sanitized['max_file_size'] = max( 1, intval( $input['max_file_size'] ) ); }
+        $sanitized['allowed_formats'] = array();
         if ( isset( $input['allowed_formats'] ) && is_array( $input['allowed_formats'] ) ) {
             $valid_formats = array( 'mp4', 'webm', 'ogg', 'mov', 'avi' );
             $sanitized['allowed_formats'] = array_values( array_filter( array_map( 'sanitize_text_field', $input['allowed_formats'] ), function( $f ) use ( $valid_formats ) {
