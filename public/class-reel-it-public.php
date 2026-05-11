@@ -193,6 +193,7 @@ class Reel_It_Public {
         $unique_id     = wp_unique_id( 'reel-it-' );
         $border_radius = isset( $options['border_radius'] ) ? intval( $options['border_radius'] ) : Reel_It::DEFAULT_BORDER_RADIUS;
         $video_gap     = isset( $options['video_gap'] ) ? intval( $options['video_gap'] ) : Reel_It::DEFAULT_VIDEO_GAP;
+        $show_tagged_product_image = isset( $options['show_tagged_product_image'] ) ? (bool) $options['show_tagged_product_image'] : true;
         $total_slides  = count( $videos );
         $linked_products_by_video = $this->get_linked_products_for_videos( $videos );
 

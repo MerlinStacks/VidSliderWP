@@ -13,6 +13,7 @@
  * @var array  $videos          Filtered video array (each: id, title, url, mime).
  * @var int    $total_slides    Count of $videos.
  * @var array  $linked_products_by_video Map of video ID to linked WC product.
+ * @var bool   $show_tagged_product_image Whether tagged-product thumbs are shown.
  * @var object $public_instance Reference to Reel_It_Public (for resolve_poster_url).
  *
  * @since 1.6.0
@@ -90,15 +91,17 @@ if ( ! defined( 'WPINC' ) ) {
                     <?php $linked_product = $linked_products_by_video[ $video_id ] ?? null; ?>
                     <?php if ( $linked_product ) : ?>
                         <a href="<?php echo esc_url( $linked_product->get_permalink() ); ?>" class="reel-it-product-card" target="_blank" rel="noopener noreferrer" data-product-id="<?php echo esc_attr( $linked_product->get_id() ); ?>">
-                            <div class="reel-it-product-thumb">
-                                <?php
-                                $product_thumb = $linked_product->get_image(
-                                    'thumbnail',
-                                    array( 'loading' => 'lazy' )
-                                );
-                                echo wp_kses_post( $product_thumb );
-                                ?>
-                            </div>
+                            <?php if ( ! empty( $show_tagged_product_image ) ) : ?>
+                                <div class="reel-it-product-thumb">
+                                    <?php
+                                    $product_thumb = $linked_product->get_image(
+                                        'thumbnail',
+                                        array( 'loading' => 'lazy' )
+                                    );
+                                    echo wp_kses_post( $product_thumb );
+                                    ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="reel-it-product-info">
                                 <span class="reel-it-product-title"><?php echo esc_html( $linked_product->get_name() ); ?></span>
                                 <span class="reel-it-product-price"><?php echo wp_kses_post( $linked_product->get_price_html() ); ?></span>

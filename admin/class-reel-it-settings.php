@@ -309,7 +309,7 @@ class Reel_It_Settings {
     public function sanitize_settings( $input ) {
         // Why: merging preserves keys from other tabs/sources that aren't in this POST.
         $sanitized = get_option( 'reel_it_options', array() );
-        $checkbox_fields = array( 'default_autoplay', 'default_show_controls', 'default_show_thumbnails' );
+        $checkbox_fields = array( 'default_autoplay', 'default_show_controls', 'default_show_thumbnails', 'show_tagged_product_image' );
         foreach ( $checkbox_fields as $field ) { $sanitized[$field] = isset( $input[$field] ) ? 1 : 0; }
         if ( isset( $input['default_slider_speed'] ) ) { $sanitized['default_slider_speed'] = max( 1000, min( 10000, intval( $input['default_slider_speed'] ) ) ); }
         if ( isset( $input['border_radius'] ) ) { $sanitized['border_radius'] = max( 0, min( 50, intval( $input['border_radius'] ) ) ); }

@@ -114,6 +114,16 @@ if ( ! defined( 'WPINC' ) ) {
                             <input type="number" id="default_videos_per_row" name="reel_it_options[default_videos_per_row]" value="<?php echo esc_attr( $vpr ); ?>" min="1" max="6" step="1" class="regular-text">
                             <p class="description"><?php esc_html_e( 'Number of videos visible per row on desktop (default: 3)', 'reel-it' ); ?></p>
                         </div>
+
+                        <!-- Tagged Product Image -->
+                        <div class="reel-it-form-row">
+                            <div class="reel-it-toggle-row">
+                                <?php $product_image = isset( $options['show_tagged_product_image'] ) ? $options['show_tagged_product_image'] : 1; ?>
+                                <input type="checkbox" id="show_tagged_product_image" name="reel_it_options[show_tagged_product_image]" value="1" <?php checked( 1, $product_image ); ?>>
+                                <label for="show_tagged_product_image" class="reel-it-toggle-label"><?php esc_html_e( 'Show Tagged Product Image', 'reel-it' ); ?></label>
+                            </div>
+                            <p class="description"><?php esc_html_e( 'Show the product thumbnail on tagged product cards over videos', 'reel-it' ); ?></p>
+                        </div>
                     </div>
             </div>
 

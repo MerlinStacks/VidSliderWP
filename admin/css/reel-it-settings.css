@@ -1334,10 +1334,24 @@
 }
 
 .reel-it-checkbox-inline input[type="checkbox"] {
-    width: 1.2rem !important;
-    height: 1.2rem !important;
-    border-radius: 4px !important;
-    margin-right: 5px;
+    -webkit-appearance: auto;
+    appearance: auto;
+    width: 1rem !important;
+    min-width: 1rem;
+    height: 1rem !important;
+    min-height: 1rem;
+    border-radius: 2px !important;
+    margin: 0 8px 0 0;
+    box-shadow: none !important;
+    vertical-align: middle;
+}
+
+.reel-it-checkbox-inline input[type="checkbox"]::after {
+    content: none !important;
+}
+
+.reel-it-checkbox-inline span {
+    line-height: 1.2;
 }
 
 /* -------------------------------------------------------------------------- */
