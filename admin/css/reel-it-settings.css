@@ -1097,15 +1097,8 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* ANALYTICS DASHBOARD
+/* GALLERIES ANALYTICS COMPONENTS
 /* -------------------------------------------------------------------------- */
-
-.reel-it-analytics-wrap .reel-it-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
 
 .reel-it-date-filter {
     display: flex;
@@ -1142,7 +1135,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--vids-primary), var(--vids-cyan));
+    background: linear-gradient(135deg, var(--vids-primary), var(--vids-primary-hover));
     color: white;
     border-radius: var(--radius-md);
 }
@@ -1178,13 +1171,6 @@
 .reel-it-analytics-table td {
     padding: 1rem;
     vertical-align: middle;
-}
-
-.reel-it-no-data {
-    text-align: center;
-    padding: 3rem;
-    color: var(--vids-text-muted);
-    font-style: italic;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1242,13 +1228,6 @@
 
     .reel-it-analytics-table {
         min-width: 500px;
-    }
-
-    /* Header stacking */
-    .reel-it-analytics-wrap .reel-it-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
     }
 
     /* Tab content padding reduction */
@@ -1449,6 +1428,40 @@
     border: 1px solid #dce6df;
     border-radius: 10px;
     padding: 6px;
+}
+
+.reel-it-galleries-analytics {
+    margin-bottom: 16px;
+    padding: 18px;
+}
+
+.reel-it-galleries-analytics-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.reel-it-galleries-analytics h2 {
+    margin: 0;
+}
+
+.reel-it-manage-video-analytics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.reel-it-manage-video-analytics span {
+    font-size: 12px;
+    color: var(--vids-text-main);
+    background: #edf4f1;
+    border: 1px solid #d5e3dd;
+    border-radius: 999px;
+    padding: 4px 8px;
 }
 
 .reel-it-settings-wrap .button.button-primary {

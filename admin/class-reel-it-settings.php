@@ -68,15 +68,6 @@ class Reel_It_Settings {
             array( $this, 'render_settings_page' )
         );
 
-        // Submenu: Analytics
-        add_submenu_page(
-            'reel-it',
-            __( 'Analytics', 'reel-it' ),
-            __( 'Analytics', 'reel-it' ),
-            'manage_options',
-            'reel-it-analytics',
-            array( $this, 'render_analytics_page' )
-        );
     }
 
     public function enqueue_settings_assets( $hook_suffix ) {
@@ -121,6 +112,7 @@ class Reel_It_Settings {
             array(
                 'ajaxUrl' => admin_url( 'admin-ajax.php' ),
                 'nonce' => wp_create_nonce( 'reel_it_nonce' ),
+                'analyticsDays' => isset( $_GET['days'] ) ? min( absint( wp_unslash( $_GET['days'] ) ), 365 ) : 30, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 'strings' => array(
                     'settingsSaved' => __( 'Settings saved successfully!', 'reel-it' ),
                     'savingSettings' => __( 'Saving settings...', 'reel-it' ),
@@ -163,6 +155,9 @@ class Reel_It_Settings {
                     'manageVideos' => __( 'Manage Videos', 'reel-it' ),
                     'videosAddedSuccess' => __( 'Videos added successfully', 'reel-it' ),
                     'videoOrderFailed' => __( 'Failed to update order', 'reel-it' ),
+                    'playsLabel' => __( 'Plays', 'reel-it' ),
+                    'completionLabel' => __( 'Completion', 'reel-it' ),
+                    'clicksLabel' => __( 'Clicks', 'reel-it' ),
                     'tagsSaved' => __( 'Tags saved successfully', 'reel-it' ),
                     'tagsSaveFailed' => __( 'Error saving tags', 'reel-it' ),
                     'saveTags' => __( 'Save Tags', 'reel-it' ),
@@ -295,6 +290,10 @@ class Reel_It_Settings {
     public function render_galleries_page() {
         $database = $this->get_database();
         $feeds    = $database->get_feeds_with_thumbnails();
+        $days     = isset( $_GET['days'] ) ? min( absint( wp_unslash( $_GET['days'] ) ), 365 ) : 30; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $analytics  = new Reel_It_Analytics();
+        $stats      = $analytics->get_summary_stats( $days );
+        $top_videos = $analytics->get_top_videos( $days, 10 );
         require __DIR__ . '/views/page-galleries.php';
     }
 
@@ -330,17 +329,4 @@ class Reel_It_Settings {
     // Why: render_section_info kept for backward compat with register_settings() callbacks.
     public function render_section_info() { echo '<p>' . esc_html__( 'Configure the default settings.', 'reel-it' ) . '</p>'; }
 
-    /**
-     * Render the Analytics dashboard page.
-     *
-     * @since 1.4.0
-     */
-    public function render_analytics_page() {
-        // BUG-14 fix: clamp days to a max of 365 to prevent expensive queries
-        $days = isset( $_GET['days'] ) ? min( absint( wp_unslash( $_GET['days'] ) ), 365 ) : 30; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $analytics  = new Reel_It_Analytics();
-        $stats      = $analytics->get_summary_stats( $days );
-        $top_videos = $analytics->get_top_videos( $days, 10 );
-        require __DIR__ . '/views/page-analytics.php';
-    }
 }

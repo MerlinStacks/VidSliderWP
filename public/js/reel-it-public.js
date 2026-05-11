@@ -97,9 +97,14 @@
         if (!video) return;
 
         video.pause();
-        video.removeAttribute('src');
-        video.load(); /* Why: releases network/decode resources immediately */
-        video.remove();
+
+        if (video.classList.contains('reel-it-preview-video')) {
+            video.currentTime = 0;
+        } else {
+            video.removeAttribute('src');
+            video.load(); /* Why: releases network/decode resources immediately */
+            video.remove();
+        }
 
         vc.classList.remove('playing', 'muted');
 

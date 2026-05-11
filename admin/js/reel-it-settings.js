@@ -397,12 +397,14 @@ jQuery(document).ready(function ($) {
             $.post(reelItSettings.ajaxUrl, {
                 action: 'reel_it_get_feed_videos',
                 nonce: reelItSettings.nonce,
-                feed_id: feedId
+                feed_id: feedId,
+                days: reelItSettings.analyticsDays || 30
             }, function (response) {
                 $container.empty();
 
                 if (response.success && response.data.videos && response.data.videos.length > 0) {
                     response.data.videos.forEach(video => {
+                        const analytics = video.analytics || { plays: 0, completions: 0, clicks: 0, completion_rate: 0 };
                         const thumbContent = video.thumbnail
                             ? `<img src="${escapeHtml(video.thumbnail)}" alt="${escapeHtml(video.post_title)}">`
                             : `<span class="dashicons dashicons-video-alt3" style="font-size:32px; height:32px; width:32px; color:#fff;"></span>`;
@@ -417,6 +419,11 @@ jQuery(document).ready(function ($) {
                                 </div>
                                 <div class="reel-it-manage-video-info">
                                     <span class="reel-it-manage-video-title" title="${escapeHtml(video.post_title)}">${escapeHtml(video.post_title)}</span>
+                                    <div class="reel-it-manage-video-analytics" aria-label="Video performance">
+                                        <span>${escapeHtml(reelItSettings.strings.playsLabel)}: ${escapeHtml(String(analytics.plays))}</span>
+                                        <span>${escapeHtml(reelItSettings.strings.completionLabel)}: ${escapeHtml(String(analytics.completion_rate))}%</span>
+                                        <span>${escapeHtml(reelItSettings.strings.clicksLabel)}: ${escapeHtml(String(analytics.clicks))}</span>
+                                    </div>
                                     <div class="reel-it-manage-video-actions">
                                         <button type="button" class="reel-it-tag-product-btn" data-video-id="${video.video_id}">
                                             <span class="dashicons dashicons-tag"></span> Tag Products

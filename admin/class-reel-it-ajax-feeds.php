@@ -127,12 +127,23 @@ class Reel_It_Ajax_Feeds {
     public function ajax_get_feed_videos() {
         Reel_It_Ajax_Helper::verify();
         $feed_id = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
+        $days    = isset( $_POST['days'] ) ? min( absint( $_POST['days'] ), 365 ) : 30;
         $videos = $this->get_database()->get_feed_videos( $feed_id );
+
+        $video_ids = wp_list_pluck( $videos, 'video_id' );
+        $analytics = new Reel_It_Analytics();
+        $stats_map = $analytics->get_video_stats_map( $video_ids, $days );
 
         $videos_array = array();
         foreach ( $videos as $video ) {
             $video_data = (array) $video;
             $video_data['thumbnail'] = wp_get_attachment_image_url( $video->video_id, 'thumbnail' );
+            $video_data['analytics'] = isset( $stats_map[ $video->video_id ] ) ? $stats_map[ $video->video_id ] : array(
+                'plays'           => 0,
+                'completions'     => 0,
+                'clicks'          => 0,
+                'completion_rate' => 0,
+            );
             $videos_array[] = $video_data;
         }
 

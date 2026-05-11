@@ -51,15 +51,16 @@ if ( ! defined( 'WPINC' ) ) {
                             width="360" height="640"
                         >
                     <?php else : ?>
-                        <img
-                            class="reel-it-poster"
-                            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-                            data-needs-poster="true"
-                            alt="<?php echo esc_attr( $video_title ? $video_title : __( 'Video thumbnail', 'reel-it' ) ); ?>"
-                            decoding="async"
-                            loading="lazy"
-                            width="360" height="640"
-                        >
+                        <video
+                            class="reel-it-video reel-it-preview-video"
+                            src="<?php echo esc_url( $video_url ); ?>"
+                            playsinline
+                            muted
+                            preload="metadata"
+                            data-video-src="<?php echo esc_url( $video_url ); ?>"
+                            data-video-id="<?php echo esc_attr( $video_id ); ?>"
+                            aria-label="<?php echo esc_attr( $video_title ? $video_title : __( 'Video preview', 'reel-it' ) ); ?>"
+                        ></video>
                     <?php endif; ?>
                     <noscript>
                         <video

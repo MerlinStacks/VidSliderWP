@@ -123,7 +123,6 @@ class Reel_It {
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-reel-it-settings.php';
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-reel-it-ajax-feeds.php';
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-reel-it-ajax-products.php';
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-reel-it-ajax-analytics.php';
 
         $plugin_admin = new Reel_It_Admin( $this->get_plugin_name(), $this->get_version() );
         $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
@@ -152,10 +151,6 @@ class Reel_It {
         $this->loader->add_action( 'wp_ajax_reel_it_get_video_products', $ajax_products, 'ajax_get_video_products' );
         $this->loader->add_action( 'wp_ajax_reel_it_save_video_products', $ajax_products, 'ajax_save_video_products' );
         
-        // Analytics AJAX
-        $ajax_analytics = new Reel_It_Ajax_Analytics();
-        $this->loader->add_action( 'wp_ajax_reel_it_get_analytics', $ajax_analytics, 'ajax_get_analytics' );
-
         // BUG-11 fix: clean up orphaned feed_videos rows when an attachment is deleted
         $database = Reel_It_Database::instance();
         $this->loader->add_action( 'delete_attachment', $database, 'cleanup_deleted_attachment' );

@@ -316,4 +316,66 @@ class Reel_It_Analytics {
         set_transient( $cache_key, $results, MINUTE_IN_SECONDS * 5 );
         return $results;
     }
+
+    /**
+     * Get analytics metrics keyed by video ID.
+     *
+     * @since 1.8.0
+     * @param array $video_ids List of attachment IDs.
+     * @param int   $days      Lookback window.
+     * @return array
+     */
+    public function get_video_stats_map( $video_ids, $days = 30 ) {
+        $video_ids = array_values( array_filter( array_map( 'absint', (array) $video_ids ) ) );
+        if ( empty( $video_ids ) ) {
+            return array();
+        }
+
+        $cache_key = 'reel_it_video_stats_' . md5( wp_json_encode( $video_ids ) ) . '_' . absint( $days ) . '_' . $this->get_cache_version();
+        $cached    = get_transient( $cache_key );
+        if ( false !== $cached ) {
+            return $cached;
+        }
+
+        global $wpdb;
+
+        $date_limit   = gmdate( 'Y-m-d H:i:s', strtotime( '-' . absint( $days ) . ' days' ) );
+        $placeholders = implode( ',', array_fill( 0, count( $video_ids ), '%d' ) );
+        $query        = "SELECT
+                video_id,
+                SUM(CASE WHEN event_type = 'play' THEN 1 ELSE 0 END) AS plays,
+                SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) AS completions,
+                SUM(CASE WHEN event_type = 'product_click' THEN 1 ELSE 0 END) AS clicks
+            FROM {$this->table_name}
+            WHERE created_at >= %s
+              AND video_id IN ({$placeholders})
+            GROUP BY video_id";
+
+        $rows = $wpdb->get_results( $wpdb->prepare( $query, array_merge( array( $date_limit ), $video_ids ) ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+
+        $result = array();
+        foreach ( $video_ids as $video_id ) {
+            $result[ $video_id ] = array(
+                'plays'           => 0,
+                'completions'     => 0,
+                'clicks'          => 0,
+                'completion_rate' => 0,
+            );
+        }
+
+        foreach ( $rows as $row ) {
+            $video_id       = absint( $row['video_id'] );
+            $plays          = intval( $row['plays'] );
+            $completions    = intval( $row['completions'] );
+            $result[ $video_id ] = array(
+                'plays'           => $plays,
+                'completions'     => $completions,
+                'clicks'          => intval( $row['clicks'] ),
+                'completion_rate' => $plays > 0 ? round( ( $completions / $plays ) * 100, 1 ) : 0,
+            );
+        }
+
+        set_transient( $cache_key, $result, MINUTE_IN_SECONDS * 5 );
+        return $result;
+    }
 }
