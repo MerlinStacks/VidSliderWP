@@ -741,6 +741,90 @@ jQuery(document).ready(function ($) {
         });
     }
 
+    // 7. PERFORMANCE SNAPSHOT FILTER (AJAX)
+    function initPerformanceSnapshot() {
+        function formatNumber(value) {
+            const num = Number(value || 0);
+            return Number.isFinite(num) ? num.toLocaleString() : '0';
+        }
+
+        function renderTopVideos(topVideos) {
+            const $table = $('#reel-it-analytics-table');
+            const $body = $('#reel-it-analytics-top-videos-body');
+
+            if (!$table.length || !$body.length) {
+                return;
+            }
+
+            if (!Array.isArray(topVideos) || topVideos.length === 0) {
+                $body.empty();
+                $table.hide();
+                return;
+            }
+
+            const rows = topVideos.map(video => `
+                <tr>
+                    <td><strong>${escapeHtml(String(video.title || ''))}</strong></td>
+                    <td>${escapeHtml(formatNumber(video.plays))}</td>
+                    <td>${escapeHtml(formatNumber(video.completions))}</td>
+                    <td>${escapeHtml(String(video.completion_rate || 0))}%</td>
+                    <td>${escapeHtml(formatNumber(video.clicks))}</td>
+                </tr>
+            `).join('');
+
+            $body.html(rows);
+            $table.show();
+        }
+
+        $(document).on('click', '.reel-it-analytics-days', function (e) {
+            e.preventDefault();
+
+            const $btn = $(this);
+            const days = parseInt($btn.data('days'), 10);
+
+            if (!days || $btn.hasClass('is-loading')) {
+                return;
+            }
+
+            const $filter = $btn.closest('.reel-it-date-filter');
+            const currentDays = parseInt($filter.data('current-days'), 10);
+
+            if (currentDays === days) {
+                return;
+            }
+
+            $filter.find('.reel-it-analytics-days').addClass('is-loading').attr('aria-disabled', 'true');
+
+            $.post(reelItSettings.ajaxUrl, {
+                action: 'reel_it_get_performance_snapshot',
+                nonce: reelItSettings.nonce,
+                days: days
+            }, function (response) {
+                if (!response.success || !response.data) {
+                    showNotification(reelItSettings.strings.errorOccurred || 'An error occurred. Please try again.', 'error');
+                    return;
+                }
+
+                const stats = response.data.stats || {};
+
+                $('[data-stat="total_plays"]').text(formatNumber(stats.total_plays));
+                $('[data-stat="total_completions"]').text(formatNumber(stats.total_completions));
+                $('[data-stat="completion_rate"]').text(`${stats.completion_rate || 0}%`);
+                $('[data-stat="total_clicks"]').text(formatNumber(stats.total_clicks));
+
+                renderTopVideos(response.data.top_videos || []);
+
+                $filter.data('current-days', response.data.days || days);
+                $filter.find('.reel-it-analytics-days').removeClass('button-primary');
+                $btn.addClass('button-primary');
+            }).fail(function () {
+                showNotification(reelItSettings.strings.connectionError, 'error');
+            }).always(function () {
+                $filter.find('.reel-it-analytics-days').removeClass('is-loading').removeAttr('aria-disabled');
+            });
+        });
+    }
+
     // Init
     initTabs();
     initFeedManager();
@@ -748,5 +832,6 @@ jQuery(document).ready(function ($) {
     initVideoModal();
     initProductTagging();
     initCopyShortcode();
+    initPerformanceSnapshot();
 
 });

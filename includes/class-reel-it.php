@@ -144,6 +144,7 @@ class Reel_It {
         $this->loader->add_action( 'wp_ajax_reel_it_remove_video_from_feed', $ajax_feeds, 'ajax_remove_video_from_feed' );
         $this->loader->add_action( 'wp_ajax_reel_it_update_video_order', $ajax_feeds, 'ajax_update_video_order' );
         $this->loader->add_action( 'wp_ajax_reel_it_search_videos', $ajax_feeds, 'ajax_search_videos' );
+        $this->loader->add_action( 'wp_ajax_reel_it_get_performance_snapshot', $ajax_feeds, 'ajax_get_performance_snapshot' );
         
         // Product Tagging AJAX
         $ajax_products = new Reel_It_Ajax_Products();

@@ -234,6 +234,28 @@ class Reel_It_Ajax_Feeds {
     }
 
     /**
+     * Get galleries analytics snapshot for selected period.
+     *
+     * @return void Sends JSON response.
+     */
+    public function ajax_get_performance_snapshot() {
+        Reel_It_Ajax_Helper::verify();
+
+        $days      = isset( $_POST['days'] ) ? min( absint( $_POST['days'] ), 365 ) : 30;
+        $analytics = new Reel_It_Analytics();
+        $stats     = $analytics->get_summary_stats( $days );
+        $top_videos = $analytics->get_top_videos( $days, 10 );
+
+        wp_send_json_success(
+            array(
+                'days'       => $days,
+                'stats'      => $stats,
+                'top_videos' => $top_videos,
+            )
+        );
+    }
+
+    /**
      * Get feed thumbnail data.
      *
      * @return void Sends JSON response.
