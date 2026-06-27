@@ -367,8 +367,16 @@ class Reel_It_Public {
             if ( empty( $atts['videos'] ) ) {
                 return '<p>' . __( 'No videos selected.', 'reel-it' ) . '</p>';
             }
-            $videos = is_array( $atts['videos'] ) ? $atts['videos'] : json_decode( $atts['videos'], true );
-            if ( json_last_error() !== JSON_ERROR_NONE ) {
+            if ( is_array( $atts['videos'] ) ) {
+                $videos = $atts['videos'];
+            } else {
+                $videos = json_decode( $atts['videos'], true );
+                if ( json_last_error() !== JSON_ERROR_NONE ) {
+                    return '<p>' . __( 'Invalid video configuration.', 'reel-it' ) . '</p>';
+                }
+            }
+
+            if ( ! is_array( $videos ) ) {
                 return '<p>' . __( 'Invalid video configuration.', 'reel-it' ) . '</p>';
             }
         }
@@ -390,7 +398,7 @@ class Reel_It_Public {
         }
 
         // Pre-filter deleted attachments so slide count and aria-labels are accurate.
-        return array_values( array_filter( $videos, function( $video ) {
+        $videos = array_values( array_filter( $videos, function( $video ) {
             $vid = isset( $video['id'] ) ? intval( $video['id'] ) : 0;
             $url = isset( $video['url'] ) ? $video['url'] : '';
             if ( empty( $url ) ) {
@@ -401,6 +409,12 @@ class Reel_It_Public {
             }
             return true;
         } ) );
+
+        if ( empty( $videos ) ) {
+            return '<p>' . __( 'No videos found.', 'reel-it' ) . '</p>';
+        }
+
+        return $videos;
     }
 
     /**
@@ -449,7 +463,7 @@ class Reel_It_Public {
      */
     public function ajax_track_event() {
         $referer = wp_get_referer();
-        if ( false === $referer || ! str_starts_with( $referer, home_url( '/' ) ) ) {
+        if ( false === $referer || 0 !== strpos( $referer, home_url( '/' ) ) ) {
             wp_send_json_error( array( 'message' => __( 'Invalid request origin', 'reel-it' ) ) );
         }
 
@@ -475,8 +489,9 @@ class Reel_It_Public {
             wp_send_json_error( array( 'message' => __( 'Invalid event type', 'reel-it' ) ) );
         }
 
-        // Validate video exists
-        if ( ! get_post( $video_id ) ) {
+        // Validate video is a real video attachment.
+        $video_post = get_post( $video_id );
+        if ( ! $video_post || 'attachment' !== $video_post->post_type || 0 !== strpos( (string) get_post_mime_type( $video_id ), 'video/' ) ) {
             wp_send_json_error( array( 'message' => __( 'Invalid video', 'reel-it' ) ) );
         }
 

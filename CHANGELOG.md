@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.6.1] - 2026-06-27
+
+### Fixed
+- Block/admin upload responses now include the full video object shape expected by the editor UI.
+- Gallery update, video search, shortcode parsing, analytics tracking, and attachment cleanup edge cases are hardened.
+- Frontend slider controls now clean up playback state correctly, render thumbnail navigation, and honor slider speed.
+- Removed redundant dead AJAX/JS paths and cleared the analytics cron hook during uninstall.
+
 ## [1.5.0] - 2026-03-05
 
 ### Improved

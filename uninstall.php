@@ -17,6 +17,9 @@ global $wpdb;
 delete_option( 'reel_it_options' );
 delete_option( 'reel_it_db_version' );
 
+// Clear scheduled analytics pruning if the plugin is uninstalled without deactivation.
+wp_clear_scheduled_hook( 'reel_it_daily_prune' );
+
 // Clean up all transients
 delete_transient( 'reel_it_video_cache' );
 delete_transient( 'reel_it_feeds_data' );

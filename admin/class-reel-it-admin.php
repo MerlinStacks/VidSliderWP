@@ -124,10 +124,6 @@ class Reel_It_Admin {
                     'uploadFailedInvalid'  => __( 'Upload failed: invalid server response.', 'reel-it' ),
                     'uploadFailedServer'   => __( 'Upload failed: server error.', 'reel-it' ),
                     'uploadFailedNetwork'  => __( 'Upload failed: network error.', 'reel-it' ),
-                    'selectAction'         => __( 'Please select an action.', 'reel-it' ),
-                    'selectAtLeastOneVideo' => __( 'Please select at least one video.', 'reel-it' ),
-                    'actionFailed'         => __( 'Action failed.', 'reel-it' ),
-                    'actionFailedServer'   => __( 'Action failed: server error.', 'reel-it' ),
                     'uploading'            => __( 'Uploading...', 'reel-it' ),
                     'confirmRemoveVideo'   => __( 'Are you sure you want to remove this video?', 'reel-it' ),
                     'videoRemoved'         => __( 'Video removed.', 'reel-it' ),
@@ -156,11 +152,15 @@ class Reel_It_Admin {
             wp_send_json_error( array( 'message' => $result->get_error_message() ) );
         }
 
-        // Map response keys to match existing admin endpoint expectations
+        // Keep attachment_id for older callers, but return the canonical video
+        // shape expected by the block editor and current admin JS.
         wp_send_json_success( array(
+            'id'            => $result['id'],
             'attachment_id' => $result['id'],
             'url'           => $result['url'],
             'title'         => $result['title'],
+            'mime'          => $result['mime'],
+            'thumbnail'     => $result['thumbnail'],
         ) );
     }
 }

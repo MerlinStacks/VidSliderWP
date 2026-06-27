@@ -9,6 +9,22 @@ jQuery(document).ready(function ($) {
     // Why: escapeHtml is provided by reel-it-utils.js (loaded as a dependency).
     var escapeHtml = ReelItUtils.escapeHtml;
 
+    function safeStorageGet(key) {
+        try {
+            return window.localStorage.getItem(key);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function safeStorageSet(key, value) {
+        try {
+            window.localStorage.setItem(key, value);
+        } catch (e) {
+            // Storage can be blocked in private browsing or sandboxed contexts.
+        }
+    }
+
     // Helper: Show standard WP admin notices (or custom toaster)
     function showNotification(message, type = 'success') {
         // Remove existing notifications
@@ -88,12 +104,12 @@ jQuery(document).ready(function ($) {
             $(`.reel-it-tab[data-tab="${tabId}"]`).addClass('active').attr('aria-selected', 'true');
             $(`#${tabId}`).addClass('active').removeAttr('hidden');
 
-            localStorage.setItem('reelItActiveTab', tabId);
+            safeStorageSet('reelItActiveTab', tabId);
         }
 
         // Init State
         if ($('.reel-it-tab').length) {
-            const lastTab = localStorage.getItem('reelItActiveTab');
+            const lastTab = safeStorageGet('reelItActiveTab');
             // BUG-12 fix: validate tab ID against known pane IDs to prevent DOM injection
             const validTabIds = $('.reel-it-tab-pane').map(function () { return this.id; }).get();
             if (lastTab && validTabIds.indexOf(lastTab) !== -1) {
@@ -311,13 +327,13 @@ jQuery(document).ready(function ($) {
         });
 
         // Close Modal — updates parent feed card count/thumb instead of reloading
-        $(document).on('click', '.reel-it-modal-close, .reel-it-modal-close-btn, .reel-it-modal-overlay', function (e) {
+        $(document).on('click', '#reel-it-video-modal > .reel-it-modal-overlay, #reel-it-video-modal .reel-it-modal-close, #reel-it-video-modal .reel-it-modal-close-btn', function (e) {
             e.preventDefault();
             closeVideoModal();
         });
 
         $(document).on('keydown', function (e) {
-            if (e.key === 'Escape' && $videoModal.is(':visible')) {
+            if (e.key === 'Escape' && $videoModal.is(':visible') && !$('#reel-it-product-modal').is(':visible')) {
                 closeVideoModal();
             }
         });
@@ -378,7 +394,7 @@ jQuery(document).ready(function ($) {
             }, function (response) {
                 if (response.success) {
                     $item.fadeOut(300, function () { $(this).remove(); });
-                    showNotification(reelItSettings.strings.videoRemoved, 'success');
+                    showNotification(reelItSettings.strings.videoRemovedFromFeed || reelItSettings.strings.videoRemoved, 'success');
                 } else {
                     showNotification(reelItSettings.strings.videoRemoveFailed, 'error');
                     $item.css('opacity', '1');
@@ -550,7 +566,7 @@ jQuery(document).ready(function ($) {
             if (!$notice.length) {
                 $('#reel-it-product-search').before(
                     '<p class="reel-it-single-product-notice description" style="margin-bottom:8px;color:#9e6703;font-style:italic;">' +
-                    (reelItSettings.strings.singleProductNotice || 'Only one product can be tagged per video.') +
+                    escapeHtml(reelItSettings.strings.singleProductNotice || 'Only one product can be tagged per video.') +
                     '</p>'
                 );
             }
@@ -564,9 +580,15 @@ jQuery(document).ready(function ($) {
         });
 
         // Close Product Modal
-        $(document).on('click', '.reel-it-product-modal-close, .reel-it-product-modal-close-btn', function (e) {
+        $(document).on('click', '#reel-it-product-modal > .reel-it-modal-overlay, .reel-it-product-modal-close, .reel-it-product-modal-close-btn', function (e) {
             e.preventDefault();
             closeProductModal();
+        });
+
+        $(document).on('keydown', function (e) {
+            if (e.key === 'Escape' && $productModal.is(':visible')) {
+                closeProductModal();
+            }
         });
 
         // Search Products

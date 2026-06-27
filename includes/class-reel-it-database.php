@@ -326,7 +326,7 @@ class Reel_It_Database {
         );
         
         if ( $result ) {
-            $this->clear_feed_cache();
+            $this->clear_feed_cache( (int) $wpdb->insert_id );
         }
         
         return $result ? $wpdb->insert_id : false;
@@ -356,7 +356,7 @@ class Reel_It_Database {
         );
         
         if ( $result !== false ) {
-            $this->clear_feed_cache();
+            $this->clear_feed_cache( $feed_id );
         }
         
         return $result !== false;
@@ -387,7 +387,7 @@ class Reel_It_Database {
         );
         
         if ( $result !== false ) {
-            $this->clear_feed_cache();
+            $this->clear_feed_cache( $feed_id );
         }
 
         return $result !== false;
@@ -468,7 +468,7 @@ class Reel_It_Database {
         );
         
         if ( $result ) {
-            $this->clear_feed_cache();
+            $this->clear_feed_cache( $feed_id );
         }
         
         return $result ? $wpdb->insert_id : false;
@@ -495,7 +495,7 @@ class Reel_It_Database {
         );
         
         if ( $result !== false ) {
-            $this->clear_feed_cache();
+            $this->clear_feed_cache( $feed_id );
         }
         
         return $result !== false;
@@ -525,7 +525,7 @@ class Reel_It_Database {
         );
         
         if ( $result !== false ) {
-            $this->clear_feed_cache();
+            $this->clear_feed_cache( $feed_id );
         }
         
         return $result !== false;
@@ -562,6 +562,8 @@ class Reel_It_Database {
         }
 
         $args = wp_parse_args( $args, $defaults );
+        $args['page']     = max( 1, absint( $args['page'] ) );
+        $args['per_page'] = max( 1, min( absint( $args['per_page'] ), 100 ) );
 
         $query_args = array(
             'post_type' => 'attachment',
@@ -658,13 +660,15 @@ class Reel_It_Database {
      *
      * @since 1.2.0
      */
-    private function clear_feed_cache() {
+    private function clear_feed_cache( $feed_id = 0 ) {
         // Why: keep transient delete for backwards compat during upgrade transition.
         delete_transient( 'reel_it_feeds_data' );
         wp_cache_delete( 'reel_it_all_feeds', 'reel_it' );
         wp_cache_delete( 'reel_it_feeds_thumbs', 'reel_it' );
+        if ( $feed_id ) {
+            wp_cache_delete( 'reel_it_feed_' . (int) $feed_id, 'reel_it' );
+        }
         wp_cache_set( 'reel_it_feeds_last_changed', microtime(), 'reel_it' );
-        // Individual feed caches expire via TTL (300s).
     }
 
     /**

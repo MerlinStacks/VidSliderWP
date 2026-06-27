@@ -44,6 +44,41 @@ class Reel_It_Ajax_Feeds {
     }
 
     /**
+     * Build the feed object shape expected by the admin JS.
+     *
+     * @param int    $feed_id     Feed ID.
+     * @param string $name        Feed name.
+     * @param string $description Feed description.
+     * @return array
+     */
+    private function build_feed_payload( $feed_id, $name, $description ) {
+        $thumbnail = $this->get_database()->get_feed_thumbnail_data( $feed_id );
+
+        return array(
+            'id'            => (int) $feed_id,
+            'name'          => $name,
+            'description'   => $description,
+            'video_count'   => ! empty( $thumbnail['video_count'] ) ? (int) $thumbnail['video_count'] : 0,
+            'thumbnail_url' => ! empty( $thumbnail['thumbnail_url'] ) ? $thumbnail['thumbnail_url'] : '',
+            'thumbnail_alt' => ! empty( $thumbnail['thumbnail_alt'] ) ? $thumbnail['thumbnail_alt'] : '',
+        );
+    }
+
+    /**
+     * Check whether an attachment ID points to a video attachment.
+     *
+     * @param int $video_id Attachment ID.
+     * @return bool
+     */
+    private function is_valid_video_attachment( $video_id ) {
+        if ( $video_id <= 0 || get_post_type( $video_id ) !== 'attachment' ) {
+            return false;
+        }
+
+        return 0 === strpos( (string) get_post_mime_type( $video_id ), 'video/' );
+    }
+
+    /**
      * Create a new video feed.
      *
      * @return void Sends JSON response.
@@ -66,7 +101,11 @@ class Reel_It_Ajax_Feeds {
 
         $feed_id = $database->create_feed( $name, $description );
         if ( $feed_id ) {
-            wp_send_json_success( array( 'message' => __( 'Feed created', 'reel-it' ), 'feed_id' => $feed_id ) );
+            wp_send_json_success( array(
+                'message' => __( 'Feed created', 'reel-it' ),
+                'feed_id' => $feed_id,
+                'feed'    => $this->build_feed_payload( $feed_id, $name, $description ),
+            ) );
         } else {
             wp_send_json_error( array( 'message' => __( 'Failed', 'reel-it' ) ) );
         }
@@ -89,13 +128,16 @@ class Reel_It_Ajax_Feeds {
         $database = $this->get_database();
         $existing = $database->get_feeds();
         foreach ( $existing as $feed ) {
-            if ( $feed->id !== $feed_id && strcasecmp( $feed->name, $name ) === 0 ) {
+            if ( intval( $feed->id ) !== $feed_id && strcasecmp( $feed->name, $name ) === 0 ) {
                 wp_send_json_error( array( 'message' => __( 'Another gallery with this name already exists.', 'reel-it' ) ) );
             }
         }
 
         if ( $database->update_feed( $feed_id, $name, $description ) ) {
-            wp_send_json_success( array( 'message' => __( 'Updated', 'reel-it' ) ) );
+            wp_send_json_success( array(
+                'message' => __( 'Updated', 'reel-it' ),
+                'feed'    => $this->build_feed_payload( $feed_id, $name, $description ),
+            ) );
         } else {
             wp_send_json_error( array( 'message' => __( 'Failed', 'reel-it' ) ) );
         }
@@ -128,6 +170,10 @@ class Reel_It_Ajax_Feeds {
         Reel_It_Ajax_Helper::verify();
         $feed_id = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
         $days    = isset( $_POST['days'] ) ? min( absint( $_POST['days'] ), 365 ) : 30;
+        if ( $feed_id <= 0 ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid feed ID.', 'reel-it' ) ) );
+        }
+
         $videos = $this->get_database()->get_feed_videos( $feed_id );
 
         $video_ids = wp_list_pluck( $videos, 'video_id' );
@@ -159,6 +205,10 @@ class Reel_It_Ajax_Feeds {
         Reel_It_Ajax_Helper::verify();
         $feed_id = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
         $video_id = isset( $_POST['video_id'] ) ? intval( $_POST['video_id'] ) : 0;
+        if ( $feed_id <= 0 || ! $this->is_valid_video_attachment( $video_id ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid video data.', 'reel-it' ) ) );
+        }
+
         if ( $this->get_database()->add_video_to_feed( $feed_id, $video_id ) ) {
             wp_send_json_success( array( 'message' => __( 'Added', 'reel-it' ) ) );
         } else {
@@ -175,6 +225,10 @@ class Reel_It_Ajax_Feeds {
         Reel_It_Ajax_Helper::verify();
         $feed_id = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
         $video_id = isset( $_POST['video_id'] ) ? intval( $_POST['video_id'] ) : 0;
+        if ( $feed_id <= 0 || $video_id <= 0 ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid video data.', 'reel-it' ) ) );
+        }
+
         if ( $this->get_database()->remove_video_from_feed( $feed_id, $video_id ) ) {
             wp_send_json_success( array( 'message' => __( 'Removed', 'reel-it' ) ) );
         } else {
@@ -190,6 +244,10 @@ class Reel_It_Ajax_Feeds {
     public function ajax_update_video_order() {
         Reel_It_Ajax_Helper::verify();
         $feed_id = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
+        if ( $feed_id <= 0 ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid feed ID.', 'reel-it' ) ) );
+        }
+
         // Sanitize array of arrays
         $orders_raw = isset( $_POST['video_orders'] ) ? wp_unslash( $_POST['video_orders'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         $orders = array();
@@ -218,8 +276,9 @@ class Reel_It_Ajax_Feeds {
     public function ajax_search_videos() {
         Reel_It_Ajax_Helper::verify( 'upload_files' );
         $search = isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '';
-        $page = isset( $_POST['page'] ) ? intval( $_POST['page'] ) : 1;
-        $per_page = isset( $_POST['per_page'] ) ? intval( $_POST['per_page'] ) : Reel_It::DEFAULT_PAGINATION;
+        $page = isset( $_POST['page'] ) ? max( 1, absint( $_POST['page'] ) ) : 1;
+        $per_page = isset( $_POST['per_page'] ) ? absint( $_POST['per_page'] ) : Reel_It::DEFAULT_PAGINATION;
+        $per_page = max( 1, min( $per_page, 100 ) );
         wp_send_json_success( $this->get_database()->get_available_videos( $search, $page, $per_page ) );
     }
 
@@ -255,19 +314,4 @@ class Reel_It_Ajax_Feeds {
         );
     }
 
-    /**
-     * Get feed thumbnail data.
-     *
-     * @return void Sends JSON response.
-     */
-    public function ajax_get_feed_thumbnail() {
-        Reel_It_Ajax_Helper::verify();
-        $feed_id = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
-        $data = $this->get_database()->get_feed_thumbnail_data( $feed_id );
-        if ( $data['success'] ) {
-            wp_send_json_success( $data );
-        } else {
-            wp_send_json_error( $data );
-        }
-    }
 }

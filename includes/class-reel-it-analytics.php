@@ -135,7 +135,8 @@ class Reel_It_Analytics {
     public function prune_old_events( $retention_days = 90 ) {
         global $wpdb;
 
-        $cutoff = gmdate( 'Y-m-d H:i:s', strtotime( "-{$retention_days} days" ) );
+        $retention_days = max( 1, absint( $retention_days ) );
+        $cutoff = wp_date( 'Y-m-d H:i:s', time() - ( $retention_days * DAY_IN_SECONDS ) );
 
         $deleted = $wpdb->query( $wpdb->prepare(
             "DELETE FROM {$this->table_name} WHERE created_at < %s",
@@ -192,6 +193,7 @@ class Reel_It_Analytics {
      * @return array
      */
     public function get_summary_stats( $days = 30 ) {
+        $days      = max( 1, absint( $days ) );
         $cache_key = 'reel_it_stats_' . $days . '_' . $this->get_cache_version();
         $cached    = get_transient( $cache_key );
         if ( false !== $cached ) {
@@ -200,7 +202,7 @@ class Reel_It_Analytics {
 
         global $wpdb;
 
-        $date_limit = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+        $date_limit = wp_date( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
 
         $row = $wpdb->get_row( $wpdb->prepare(
             "SELECT
@@ -239,6 +241,8 @@ class Reel_It_Analytics {
      * @return array
      */
     public function get_top_videos( $days = 30, $limit = 10 ) {
+        $days      = max( 1, absint( $days ) );
+        $limit     = max( 1, absint( $limit ) );
         $cache_key = 'reel_it_top_' . $days . '_' . $limit . '_' . $this->get_cache_version();
         $cached    = get_transient( $cache_key );
         if ( false !== $cached ) {
@@ -247,7 +251,7 @@ class Reel_It_Analytics {
 
         global $wpdb;
 
-        $date_limit = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+        $date_limit = wp_date( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
 
         $results = $wpdb->get_results( $wpdb->prepare(
             "SELECT 
@@ -290,6 +294,7 @@ class Reel_It_Analytics {
      * @return array
      */
     public function get_daily_stats( $days = 30 ) {
+        $days      = max( 1, absint( $days ) );
         $cache_key = 'reel_it_daily_' . $days . '_' . $this->get_cache_version();
         $cached    = get_transient( $cache_key );
         if ( false !== $cached ) {
@@ -298,7 +303,7 @@ class Reel_It_Analytics {
 
         global $wpdb;
 
-        $date_limit = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
+        $date_limit = wp_date( 'Y-m-d', time() - ( $days * DAY_IN_SECONDS ) );
 
         $results = $wpdb->get_results( $wpdb->prepare(
             "SELECT 
@@ -331,7 +336,8 @@ class Reel_It_Analytics {
             return array();
         }
 
-        $cache_key = 'reel_it_video_stats_' . md5( wp_json_encode( $video_ids ) ) . '_' . absint( $days ) . '_' . $this->get_cache_version();
+        $days      = max( 1, absint( $days ) );
+        $cache_key = 'reel_it_video_stats_' . md5( wp_json_encode( $video_ids ) ) . '_' . $days . '_' . $this->get_cache_version();
         $cached    = get_transient( $cache_key );
         if ( false !== $cached ) {
             return $cached;
@@ -339,7 +345,7 @@ class Reel_It_Analytics {
 
         global $wpdb;
 
-        $date_limit   = gmdate( 'Y-m-d H:i:s', strtotime( '-' . absint( $days ) . ' days' ) );
+        $date_limit   = wp_date( 'Y-m-d H:i:s', time() - ( $days * DAY_IN_SECONDS ) );
         $placeholders = implode( ',', array_fill( 0, count( $video_ids ), '%d' ) );
         $query        = "SELECT
                 video_id,

@@ -69,7 +69,7 @@ class Reel_It_Blocks_Secure {
         wp_register_script(
             'reel-it-block-editor',
             plugin_dir_url( __FILE__ ) . 'js/block-editor.js',
-            array( 'wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-data', 'wp-i18n' ),
+            array( 'wp-blocks', 'wp-element', 'wp-components', 'wp-block-editor', 'wp-i18n' ),
             $this->version,
             true
         );
@@ -205,38 +205,9 @@ class Reel_It_Blocks_Secure {
      * @since    1.0.0
      */
     private function register_ajax_handlers() {
-        // Why: upload handler is already registered in Reel_It_Admin — registering
-        // a second handler for the same action is dead code and risks response
-        // shape mismatches if load order changes.
-        // add_action( 'wp_ajax_reel_it_upload_video', array( $this, 'handle_video_upload' ) );
-        // Remove nopriv access for security - only authenticated users can upload
-
         // Register media query handler - only for authenticated users with upload capabilities
         add_action( 'wp_ajax_reel_it_query_videos', array( $this, 'handle_video_query' ) );
         // Remove nopriv access for security - only authenticated users can query videos
-    }
-
-    /**
-     * Handle video upload with enhanced security
-     *
-     * @since    1.0.0
-     */
-    public function handle_video_upload() {
-        Reel_It_Ajax_Helper::verify( 'upload_files' );
-
-        if ( ! isset( $_FILES['video_file'] ) ) {
-            wp_send_json_error( array( 'message' => __( 'No file uploaded.', 'reel-it' ) ) );
-        }
-
-        $file = $_FILES['video_file']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-        $result = Reel_It_Upload_Handler::handle_upload( $file );
-
-        if ( is_wp_error( $result ) ) {
-            wp_send_json_error( array( 'message' => $result->get_error_message() ) );
-        }
-
-        wp_send_json_success( $result );
     }
 
     /**

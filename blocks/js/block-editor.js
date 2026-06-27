@@ -1,10 +1,9 @@
-(function (blocks, element, components, blockEditor, data, i18n) {
+(function (blocks, element, components, blockEditor, i18n) {
     const { __ } = i18n;
     const { registerBlockType } = blocks;
-    const { InspectorControls, MediaUpload, MediaUploadCheck } = blockEditor;
-    const { PanelBody, Button, TextControl, RangeControl, ToggleControl, SelectControl, Spinner, Notice, SearchControl, Placeholder, ButtonGroup } = components;
+    const { InspectorControls } = blockEditor;
+    const { PanelBody, Button, TextControl, ToggleControl, SelectControl, Spinner, Notice, SearchControl, Placeholder, ButtonGroup } = components;
     const { createElement: el, Fragment, useState, useEffect, useCallback, useRef } = element;
-    const { useSelect } = data;
 
     // Helper: Viewport Control (Buttons + Half Toggle)
     const ViewportControl = ({ label, value, onChange, max = 6 }) => {
@@ -42,7 +41,9 @@
     };
 
     // Video Item Component
-    const VideoItem = ({ video, onRemove, onEdit }) => {
+    const VideoItem = ({ video, onRemove }) => {
+        const mimeLabel = video.mime ? video.mime.replace('video/', '') : __('Video', 'reel-it');
+
         return el('div', { className: 'reel-it-video-item' },
             el('div', { className: 'reel-it-video-preview' },
                 video.thumbnail ?
@@ -53,7 +54,7 @@
             ),
             el('div', { className: 'reel-it-video-info' },
                 el('div', { className: 'reel-it-video-title', title: video.title }, video.title),
-                el('div', { className: 'reel-it-video-mime' }, video.mime.replace('video/', ''))
+                el('div', { className: 'reel-it-video-mime' }, mimeLabel)
             ),
             el('div', { className: 'reel-it-video-actions' },
                 el(Button, {
@@ -172,7 +173,6 @@
         const [search, setSearch] = useState('');
         const [videoLibrary, setVideoLibrary] = useState([]);
         const [loadingLibrary, setLoadingLibrary] = useState(false);
-        const [currentPage, setCurrentPage] = useState(1);
 
         // Load video library
         const loadVideoLibrary = useCallback((searchTerm = '', page = 1) => {
@@ -190,7 +190,7 @@
             })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
+                    if (data.success && data.data && Array.isArray(data.data.videos)) {
                         if (page === 1) {
                             setVideoLibrary(data.data.videos);
                         } else {
@@ -213,7 +213,6 @@
         const searchTimerRef = useRef(null);
         const handleSearch = (value) => {
             setSearch(value);
-            setCurrentPage(1);
             if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
             searchTimerRef.current = setTimeout(() => {
                 loadVideoLibrary(value, 1);
@@ -302,10 +301,10 @@
             })
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
+                    if (data.success && data.data) {
                         setPosts(data.data.videos || []);
                     } else {
-                        setError(data.data.message || __('Failed to load feed', 'reel-it'));
+                        setError((data.data && data.data.message) || __('Failed to load feed', 'reel-it'));
                     }
                 })
                 .catch(err => setError(__('Network error', 'reel-it')))
@@ -531,12 +530,12 @@
                 })
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success) {
+                        if (data.success && data.data && data.data.id && data.data.url) {
                             setAttributes({
                                 videos: [...videos, data.data]
                             });
                         } else {
-                            setUploadError(data.data.message || __('Upload failed', 'reel-it'));
+                            setUploadError((data.data && data.data.message) || __('Upload failed', 'reel-it'));
                         }
                     })
                     .catch(() => {
@@ -552,15 +551,6 @@
                 setAttributes({
                     videos: videos.filter(video => video.id !== videoToRemove.id)
                 });
-            };
-
-            // Handle video reorder
-            const handleVideoReorder = (dragIndex, hoverIndex) => {
-                const draggedVideo = videos[dragIndex];
-                const newVideos = [...videos];
-                newVideos.splice(dragIndex, 1);
-                newVideos.splice(hoverIndex, 0, draggedVideo);
-                setAttributes({ videos: newVideos });
             };
 
             const blockProps = useBlockProps({
@@ -690,6 +680,5 @@
     window.wp.element,
     window.wp.components,
     window.wp.blockEditor,
-    window.wp.data,
     window.wp.i18n
 ));

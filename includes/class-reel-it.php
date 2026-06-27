@@ -76,6 +76,7 @@ class Reel_It {
         if ( is_admin() || wp_doing_ajax() ) {
             $this->define_admin_hooks();
         }
+        $this->define_data_hooks();
         $this->define_public_hooks();
         $this->define_block_hooks();
         // Database tables are now created via activation hook in reel-it.php
@@ -151,8 +152,14 @@ class Reel_It {
         $this->loader->add_action( 'wp_ajax_reel_it_search_products', $ajax_products, 'ajax_search_products' );
         $this->loader->add_action( 'wp_ajax_reel_it_get_video_products', $ajax_products, 'ajax_get_video_products' );
         $this->loader->add_action( 'wp_ajax_reel_it_save_video_products', $ajax_products, 'ajax_save_video_products' );
-        
-        // BUG-11 fix: clean up orphaned feed_videos rows when an attachment is deleted
+    }
+
+    /**
+     * Register data-integrity hooks that must run in every request context.
+     *
+     * @since 1.6.1
+     */
+    private function define_data_hooks() {
         $database = Reel_It_Database::instance();
         $this->loader->add_action( 'delete_attachment', $database, 'cleanup_deleted_attachment' );
     }

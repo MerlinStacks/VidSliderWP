@@ -1,6 +1,16 @@
 (function () {
     'use strict';
 
+    let memorySessionId = '';
+
+    function createSessionId() {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+            return 'ri_' + crypto.randomUUID();
+        }
+
+        return 'ri_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
     /**
      * Generates or retrieves a per-session anonymous ID for analytics.
      * Uses crypto.randomUUID() when available for unpredictable IDs.
@@ -8,16 +18,19 @@
      * @return {string} Session identifier.
      */
     function getSessionId() {
-        let sid = sessionStorage.getItem('reel_it_sid');
-        if (!sid) {
-            if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-                sid = 'ri_' + crypto.randomUUID();
-            } else {
-                sid = 'ri_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        try {
+            let sid = sessionStorage.getItem('reel_it_sid');
+            if (!sid) {
+                sid = createSessionId();
+                sessionStorage.setItem('reel_it_sid', sid);
             }
-            sessionStorage.setItem('reel_it_sid', sid);
+            return sid;
+        } catch (e) {
+            if (!memorySessionId) {
+                memorySessionId = createSessionId();
+            }
+            return memorySessionId;
         }
-        return sid;
     }
 
     /**
@@ -108,6 +121,9 @@
 
         vc.classList.remove('playing', 'muted');
 
+        const controls = vc.querySelector('.reel-it-controls-container');
+        if (controls) controls.classList.remove('visible');
+
         /* Restore poster visibility */
         const poster = vc.querySelector('.reel-it-poster');
         if (poster) {
@@ -137,6 +153,8 @@
             this.isScrolling = false;
             this.sequentialAutoplay = true;
             this.scrollTimeout = null;
+            this.autoAdvanceTimeout = null;
+            this.sliderSpeed = parseInt(element.dataset.sliderSpeed, 10) || 0;
             this.trackedPlays = new Set();
             this.trackedCompletions = new Set();
 
@@ -163,8 +181,8 @@
                 if (vc) {
                     const video = createVideo(vc);
                     if (video) {
-                        this.playVideo(video);
                         this._bindVideoEvents(vc, video);
+                        this.playVideo(video);
                     }
                 }
             }
@@ -199,6 +217,13 @@
             return vc ? vc.querySelector('video.reel-it-video') : null;
         }
 
+        clearAutoAdvance() {
+            if (this.autoAdvanceTimeout) {
+                clearTimeout(this.autoAdvanceTimeout);
+                this.autoAdvanceTimeout = null;
+            }
+        }
+
         bindEvents() {
             /* 1. Play/Pause via overlay or play button */
             this._on(this.container, 'click', (e) => {
@@ -220,8 +245,8 @@
                 /* Create video on demand and play */
                 const video = createVideo(vc);
                 if (video) {
-                    this.playVideo(video);
                     this._bindVideoEvents(vc, video);
+                    this.playVideo(video);
                 }
             });
 
@@ -300,7 +325,7 @@
             });
 
             /* 7. Hover preload: prime browser cache on desktop so click-to-play feels instant */
-            if (window.matchMedia('(hover: hover)').matches) {
+            if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
                 this.slides.forEach((slide) => {
                     this._on(slide, 'mouseenter', () => {
                         const vc = slide.querySelector('.reel-it-video-container');
@@ -357,6 +382,8 @@
         playVideo(video) {
             if (!video) return;
 
+            this.clearAutoAdvance();
+
             /* Why: mute ensures play() succeeds without prior user gesture (autoplay policy) */
             video.muted = true;
 
@@ -389,6 +416,11 @@
             this.slides.forEach(function (s) { s.classList.remove('active'); });
             this.slides[index].classList.add('active');
             this.currentSlide = index;
+            this.thumbnailBtns.forEach(function (btn) {
+                const isActive = parseInt(btn.dataset.slide, 10) === index;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
 
             /* Track play event (once per video per session) */
             if (videoId && !this.trackedPlays.has(videoId)) {
@@ -410,7 +442,11 @@
         onVideoPause(index) {
             if (index < 0) return;
             const vc = this._vc(index);
-            if (vc) vc.classList.remove('playing');
+            if (vc) {
+                vc.classList.remove('playing');
+                const controls = vc.querySelector('.reel-it-controls-container');
+                if (controls) controls.classList.remove('visible');
+            }
         }
 
         onVideoEnded(index, watchTime) {
@@ -430,7 +466,10 @@
             destroyVideo(vc);
 
             if (this.sequentialAutoplay) {
-                this.step(1, true);
+                this.clearAutoAdvance();
+                this.autoAdvanceTimeout = setTimeout(() => {
+                    this.step(1, true);
+                }, Math.max(0, this.sliderSpeed));
             }
         }
 
@@ -444,7 +483,25 @@
         }
 
         navToSlide(index, autoPlay) {
+            if (index < 0 || index >= this.totalSlides) return;
+
+            this.clearAutoAdvance();
+
+            if (index !== this.currentSlide) {
+                const currentVc = this._vc(this.currentSlide);
+                if (currentVc) destroyVideo(currentVc);
+            }
+
             this.currentSlide = index;
+            this.slides.forEach(function (s) { s.classList.remove('active'); });
+            this.slides[index].classList.add('active');
+
+            this.thumbnailBtns.forEach(function (btn) {
+                const isActive = parseInt(btn.dataset.slide, 10) === index;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
             this.ensureVisible(index);
 
             if (autoPlay) {
@@ -452,8 +509,8 @@
                 if (vc) {
                     const video = createVideo(vc);
                     if (video) {
-                        this.playVideo(video);
                         this._bindVideoEvents(vc, video);
+                        this.playVideo(video);
                     }
                 }
             }
@@ -516,10 +573,17 @@
                 this.currentSlide = bestIndex;
                 this.slides.forEach(function (s) { s.classList.remove('active'); });
                 this.slides[bestIndex].classList.add('active');
+                this.thumbnailBtns.forEach(function (btn) {
+                    const isActive = parseInt(btn.dataset.slide, 10) === bestIndex;
+                    btn.classList.toggle('active', isActive);
+                    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                });
             }
         }
 
         destroy() {
+            this.clearAutoAdvance();
+
             /* Destroy any active videos */
             this.slides.forEach(function (slide) {
                 const vc = slide.querySelector('.reel-it-video-container');
@@ -608,7 +672,6 @@
 
         /* Mark server-provided poster images as loaded so shimmer stops */
         document.querySelectorAll('.reel-it-poster').forEach(function (img) {
-            if (img.dataset.needsPoster) return; /* Skip — will be handled by generatePosters */
             if (img.complete && img.naturalWidth > 0) {
                 img.closest('.reel-it-video-container').classList.add('has-poster');
             } else {
@@ -618,116 +681,6 @@
             }
         });
 
-        /* Why: requestIdleCallback defers canvas work to browser idle time,
-           reducing TBT during initial render. Fallback to setTimeout for Safari. */
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(generatePosters, { timeout: 2000 });
-        } else {
-            setTimeout(generatePosters, 300);
-        }
     });
-
-    /**
-     * Generate poster frames client-side for slides missing a server-provided thumbnail.
-     * Why: Most shared hosts lack FFmpeg so wp_get_attachment_image_url returns false
-     * for video attachments, leaving the poster <img> with an empty src.
-     * This creates a lightweight snapshot via an offscreen video + canvas.
-     */
-    function generatePosters() {
-        var posters = document.querySelectorAll('.reel-it-poster[data-needs-poster]');
-        var queue = [];
-        var active = 0;
-        var MAX_CONCURRENT = 2;
-
-        posters.forEach(function (img) {
-            var vc = img.closest('.reel-it-video-container');
-            if (!vc) return;
-            var videoSrc = vc.dataset.videoSrc;
-            if (!videoSrc) return;
-            queue.push({ img: img, src: videoSrc, vc: vc });
-        });
-
-        /** Process next item in the queue, respecting concurrency limit. */
-        function processNext() {
-            if (queue.length === 0 || active >= MAX_CONCURRENT) return;
-            active++;
-            var item = queue.shift();
-            createPoster(item.img, item.src, item.vc);
-        }
-
-        /**
-         * Create an offscreen video, seek to ~25% of duration, paint to canvas,
-         * set the poster <img> src to the data URL.
-         * Why 25%: skips black leader frames and intro fades common in encoded videos.
-         */
-        function createPoster(targetImg, src, vc) {
-            var tmpVideo = document.createElement('video');
-            tmpVideo.preload = 'auto';
-            tmpVideo.muted = true;
-            tmpVideo.playsInline = true;
-            tmpVideo.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
-
-            var cleaned = false;
-            var timeoutId = setTimeout(function () { cleanup(); }, 10000);
-
-            function cleanup() {
-                if (cleaned) return;
-                cleaned = true;
-                clearTimeout(timeoutId);
-                tmpVideo.removeAttribute('src');
-                tmpVideo.load();
-                if (tmpVideo.parentNode) tmpVideo.parentNode.removeChild(tmpVideo);
-                active--;
-                processNext();
-            }
-
-            function paintPoster() {
-                try {
-                    var w = tmpVideo.videoWidth || 360;
-                    var h = tmpVideo.videoHeight || 640;
-                    var canvas = document.createElement('canvas');
-                    canvas.width = w;
-                    canvas.height = h;
-                    var ctx = canvas.getContext('2d');
-                    ctx.drawImage(tmpVideo, 0, 0, w, h);
-
-                    /* Why: detect fully black frames and skip them */
-                    var sample = ctx.getImageData(
-                        Math.floor(w * 0.25), Math.floor(h * 0.25), 1, 1
-                    ).data;
-                    var isBlack = (sample[0] + sample[1] + sample[2]) < 30;
-
-                    if (!isBlack) {
-                        var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                        targetImg.src = dataUrl;
-                        targetImg.removeAttribute('data-needs-poster');
-                        vc.classList.add('has-poster');
-                    }
-                } catch (e) {
-                    /* Why: tainted canvas or missing frame — keep shimmer fallback instead of locking a black card */
-                }
-                cleanup();
-            }
-
-            /* Why: loadedmetadata guarantees duration is set; canplay may fire
-               before duration is populated on mobile Safari (BUG-02) */
-            tmpVideo.addEventListener('loadedmetadata', function () {
-                var seekTo = Math.min(tmpVideo.duration * 0.25, 2);
-                if (!isFinite(seekTo) || seekTo <= 0 || seekTo >= tmpVideo.duration) seekTo = 0.5;
-                tmpVideo.currentTime = seekTo;
-            });
-
-            tmpVideo.addEventListener('seeked', paintPoster);
-            tmpVideo.addEventListener('error', function () { cleanup(); });
-
-            document.body.appendChild(tmpVideo);
-            tmpVideo.src = src;
-        }
-
-        /* Kick off initial batch */
-        for (var i = 0; i < MAX_CONCURRENT; i++) {
-            processNext();
-        }
-    }
 
 })();

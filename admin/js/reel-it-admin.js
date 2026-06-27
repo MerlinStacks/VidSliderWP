@@ -11,7 +11,6 @@
             this.initVideoUpload();
             this.initMediaLibrary();
             this.initSettingsPage();
-            this.initBulkActions();
         },
 
         // Video upload functionality
@@ -155,7 +154,8 @@
                             id: attachment.id,
                             title: attachment.get('title'),
                             url: attachment.get('url'),
-                            thumbnail: attachment.get('thumbnail') ? attachment.get('thumbnail').url : null
+                            thumbnail: attachment.get('thumbnail') ? attachment.get('thumbnail').url : null,
+                            mime: attachment.get('mime')
                         };
 
                         ReelItAdmin.addVideoToList(videoData);
@@ -185,7 +185,7 @@
                 '<div class="placeholder"><span class="dashicons dashicons-video-alt3"></span></div>';
 
             return $(`
-                <div class="reel-it-video-item" data-video-id="${escapeHtml(videoData.id)}">
+                <div class="reel-it-video-item" data-video-id="${escapeHtml(videoData.id)}" data-video-url="${escapeHtml(videoData.url)}" data-video-thumbnail="${escapeHtml(videoData.thumbnail)}" data-video-mime="${escapeHtml(videoData.mime)}">
                     <div class="reel-it-video-thumbnail">
                         ${thumbnailHtml}
                     </div>
@@ -212,7 +212,8 @@
                     id: $item.data('video-id'),
                     title: $item.find('.reel-it-video-title').text(),
                     url: $item.data('video-url'),
-                    thumbnail: $item.data('video-thumbnail')
+                    thumbnail: $item.data('video-thumbnail'),
+                    mime: $item.data('video-mime')
                 });
             });
 
@@ -239,74 +240,6 @@
 
                 if ($target.length) {
                     $target.toggle($toggle.is(':checked'));
-                }
-            });
-        },
-
-        // Bulk actions
-        initBulkActions: function () {
-            const bulkActions = $('#reel-it-bulk-actions');
-            const bulkActionButton = $('#reel-it-do-bulk-action');
-
-            if (!bulkActions.length || !bulkActionButton.length) {
-                return;
-            }
-
-            bulkActionButton.on('click', function (e) {
-                e.preventDefault();
-
-                const action = bulkActions.val();
-                const selectedVideos = $('.reel-it-video-item input[type="checkbox"]:checked');
-
-                if (!action) {
-                    ReelItAdmin.showNotice(reel_it_admin.strings.selectAction, 'warning');
-                    return;
-                }
-
-                if (selectedVideos.length === 0) {
-                    ReelItAdmin.showNotice(reel_it_admin.strings.selectAtLeastOneVideo, 'warning');
-                    return;
-                }
-
-                ReelItAdmin.performBulkAction(action, selectedVideos);
-            });
-        },
-
-        // Perform bulk action
-        performBulkAction: function (action, selectedVideos) {
-            const videoIds = [];
-
-            selectedVideos.each(function () {
-                videoIds.push($(this).closest('.reel-it-video-item').data('video-id'));
-            });
-
-            const formData = new FormData();
-            formData.append('action', 'reel_it_bulk_action');
-            formData.append('nonce', reel_it_admin.nonce);
-            formData.append('bulk_action', action);
-            formData.append('video_ids', JSON.stringify(videoIds));
-
-            $.ajax({
-                url: reel_it_admin.ajax_url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    if (response.success) {
-                        ReelItAdmin.showNotice(response.data.message, 'success');
-
-                        // Remove videos from list if action was delete
-                        if (action === 'delete') {
-                            selectedVideos.closest('.reel-it-video-item').remove();
-                            ReelItAdmin.updateVideoData();
-                        }
-                    } else {
-                        ReelItAdmin.showNotice(response.data.message || reel_it_admin.strings.actionFailed, 'error');
-                    }
-                },
-                error: function () {
-                    ReelItAdmin.showNotice(reel_it_admin.strings.actionFailedServer, 'error');
                 }
             });
         },

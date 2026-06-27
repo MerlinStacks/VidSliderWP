@@ -3,7 +3,7 @@ Contributors: sldevs
 Tags: video, slider, gallery, woocommerce, block
 Requires at least: 5.8
 Tested up to: 6.9
-Stable tag: 1.6.0
+Stable tag: 1.6.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -56,6 +56,12 @@ Absolutely. The slider supports touch swipe gestures and responsive layouts out 
 4.  **Frontend Display**: A sleek video slider with a shoppable product card.
 
 == Changelog ==
+
+= 1.6.1 =
+*   **Fix**: Resolved block/admin upload response mismatches that could break newly uploaded videos.
+*   **Fix**: Hardened gallery, analytics, shortcode, and media validation edge cases.
+*   **Fix**: Improved frontend slider controls, thumbnails, pause/navigation cleanup, and slider speed handling.
+*   **Fix**: Removed redundant dead AJAX/JS paths and improved uninstall cron cleanup.
 
 = 1.6.0 =
 *   **New**: Added a setting to hide tagged product images in the frontend shoppable overlay.

@@ -151,7 +151,7 @@ if ( ! defined( 'WPINC' ) ) {
                                     );
                                     $selected = isset( $options['allowed_formats'] ) ? $options['allowed_formats'] : array();
                                     foreach ( $formats as $key => $label ) {
-                                        $checked = in_array( $key, $selected );
+                                        $checked = in_array( $key, $selected, true );
                                         echo '<label class="reel-it-checkbox-inline">';
                                         echo '<input type="checkbox" name="reel_it_options[allowed_formats][]" value="' . esc_attr( $key ) . '" ' . checked( $checked, true, false ) . '>';
                                         echo '<span>' . esc_html( $label ) . '</span>';

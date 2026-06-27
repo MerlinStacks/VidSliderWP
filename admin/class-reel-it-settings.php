@@ -132,7 +132,7 @@ class Reel_It_Settings {
                     'invalidFeedId' => __( 'Invalid feed ID.', 'reel-it' ),
                     'noPermissionFeeds' => __( 'You do not have permission to manage feeds.', 'reel-it' ),
                     'videoAdded' => __( 'Video added to feed successfully.', 'reel-it' ),
-                    'videoRemoved' => __( 'Video removed from feed successfully.', 'reel-it' ),
+                    'videoRemovedFromFeed' => __( 'Video removed from feed successfully.', 'reel-it' ),
                     'videoAddFailed' => __( 'Failed to add video to feed.', 'reel-it' ),
                     'videoRemoveFailed' => __( 'Failed to remove video from feed.', 'reel-it' ),
                     'videoOrderUpdated' => __( 'Video order updated successfully.', 'reel-it' ),
@@ -329,5 +329,50 @@ class Reel_It_Settings {
 
     // Why: render_section_info kept for backward compat with register_settings() callbacks.
     public function render_section_info() { echo '<p>' . esc_html__( 'Configure the default settings.', 'reel-it' ) . '</p>'; }
+
+    /**
+     * Render a Settings API field if the registered sections are displayed.
+     *
+     * The custom settings view renders fields manually, but WordPress still stores
+     * these callbacks. Keeping this method prevents fatal errors for integrations
+     * that call do_settings_sections( 'reel-it-settings' ).
+     *
+     * @param array $args Field arguments.
+     */
+    public function render_field( $args ) {
+        $options = get_option( 'reel_it_options', array() );
+        $id      = isset( $args['id'] ) ? sanitize_key( $args['id'] ) : '';
+        $type    = isset( $args['type'] ) ? sanitize_key( $args['type'] ) : 'text';
+
+        if ( '' === $id ) {
+            return;
+        }
+
+        if ( 'checkbox' === $type ) {
+            echo '<input type="checkbox" id="' . esc_attr( $id ) . '" name="reel_it_options[' . esc_attr( $id ) . ']" value="1" ' . checked( ! empty( $options[ $id ] ), true, false ) . '>';
+        } elseif ( 'checkbox_group' === $type && ! empty( $args['options'] ) && is_array( $args['options'] ) ) {
+            $selected = isset( $options[ $id ] ) && is_array( $options[ $id ] ) ? $options[ $id ] : array();
+            foreach ( $args['options'] as $value => $label ) {
+                echo '<label><input type="checkbox" name="reel_it_options[' . esc_attr( $id ) . '][]" value="' . esc_attr( $value ) . '" ' . checked( in_array( $value, $selected, true ), true, false ) . '> ' . esc_html( $label ) . '</label><br>';
+            }
+        } else {
+            $value = isset( $options[ $id ] ) ? $options[ $id ] : '';
+            echo '<input type="' . esc_attr( $type ) . '" id="' . esc_attr( $id ) . '" name="reel_it_options[' . esc_attr( $id ) . ']" value="' . esc_attr( $value ) . '"';
+            if ( isset( $args['min'] ) ) {
+                echo ' min="' . esc_attr( $args['min'] ) . '"';
+            }
+            if ( isset( $args['max'] ) ) {
+                echo ' max="' . esc_attr( $args['max'] ) . '"';
+            }
+            if ( isset( $args['step'] ) ) {
+                echo ' step="' . esc_attr( $args['step'] ) . '"';
+            }
+            echo '>';
+        }
+
+        if ( ! empty( $args['description'] ) ) {
+            echo '<p class="description">' . esc_html( $args['description'] ) . '</p>';
+        }
+    }
 
 }
