@@ -51,6 +51,21 @@ class Reel_It_Upload_Handler {
      * @return array|WP_Error Success data or WP_Error on failure.
      */
     public static function handle_upload( $file ) {
+        if ( ! is_array( $file ) || ! isset( $file['tmp_name'], $file['name'], $file['size'], $file['error'] ) ) {
+            return new WP_Error( 'invalid_upload', __( 'Invalid file upload.', 'reel-it' ) );
+        }
+
+        if ( UPLOAD_ERR_OK !== (int) $file['error'] ) {
+            return new WP_Error(
+                'upload_error',
+                sprintf(
+                    /* translators: %d: PHP file upload error code. */
+                    __( 'The upload failed with error code %d.', 'reel-it' ),
+                    (int) $file['error']
+                )
+            );
+        }
+
         // Validate the upload.
         if ( ! is_uploaded_file( $file['tmp_name'] ) ) {
             return new WP_Error( 'invalid_upload', __( 'Invalid file upload.', 'reel-it' ) );
@@ -58,9 +73,12 @@ class Reel_It_Upload_Handler {
 
         // Get allowed formats from settings.
         $options         = get_option( 'reel_it_options', array() );
-        $allowed_formats = isset( $options['allowed_formats'] ) && ! empty( $options['allowed_formats'] )
+        $allowed_formats = isset( $options['allowed_formats'] )
             ? $options['allowed_formats']
             : self::$default_formats;
+        if ( ! is_array( $allowed_formats ) ) {
+            $allowed_formats = self::$default_formats;
+        }
 
         // Build allowed MIME types array.
         $allowed_types = array();
@@ -72,13 +90,22 @@ class Reel_It_Upload_Handler {
             }
         }
 
+        if ( empty( $mimes_map ) ) {
+            return new WP_Error( 'invalid_type', __( 'No supported video formats are enabled.', 'reel-it' ) );
+        }
+
+        $filetype = wp_check_filetype( sanitize_file_name( $file['name'] ), $mimes_map );
+        if ( empty( $filetype['ext'] ) || empty( $filetype['type'] ) ) {
+            return new WP_Error( 'invalid_type', __( 'Invalid file type. Please upload a supported video file.', 'reel-it' ) );
+        }
+
         // Enhanced MIME type validation using finfo.
         if ( function_exists( 'finfo_open' ) ) {
             $finfo = finfo_open( FILEINFO_MIME_TYPE );
             if ( $finfo ) {
                 $detected_mime = finfo_file( $finfo, $file['tmp_name'] );
                 finfo_close( $finfo );
-                if ( ! in_array( $detected_mime, $allowed_types, true ) ) {
+                if ( is_string( $detected_mime ) && ! in_array( $detected_mime, $allowed_types, true ) ) {
                     return new WP_Error(
                         'mime_mismatch',
                         __( 'File type does not match extension. Please upload a valid video file.', 'reel-it' )
@@ -87,21 +114,18 @@ class Reel_It_Upload_Handler {
             }
         }
 
-        // Validate browser-reported MIME type.
-        if ( ! in_array( $file['type'], $allowed_types, true ) ) {
-            return new WP_Error(
-                'invalid_type',
-                __( 'Invalid file type. Please upload a supported video file.', 'reel-it' )
-            );
-        }
-
         // Check file size.
         $max_file_size       = isset( $options['max_file_size'] ) ? intval( $options['max_file_size'] ) : Reel_It::DEFAULT_MAX_FILE_SIZE;
+        $max_file_size       = max( 1, min( 2048, $max_file_size ) );
         $max_file_size_bytes = $max_file_size * 1024 * 1024;
         $server_limit        = wp_max_upload_size();
 
         $effective_limit = min( $max_file_size_bytes, $server_limit );
         $effective_mb    = round( $effective_limit / ( 1024 * 1024 ) );
+
+        if ( (int) $file['size'] <= 0 ) {
+            return new WP_Error( 'empty_file', __( 'The uploaded file is empty.', 'reel-it' ) );
+        }
 
         if ( $file['size'] > $effective_limit ) {
             return new WP_Error(
@@ -143,9 +167,10 @@ class Reel_It_Upload_Handler {
             'post_author'    => get_current_user_id(),
         );
 
-        $attach_id = wp_insert_attachment( $attachment, $uploaded_file['file'] );
+        $attach_id = wp_insert_attachment( $attachment, $uploaded_file['file'], 0, true );
 
-        if ( ! $attach_id ) {
+        if ( is_wp_error( $attach_id ) ) {
+            wp_delete_file( $uploaded_file['file'] );
             return new WP_Error( 'attachment_failed', __( 'Failed to save video to media library.', 'reel-it' ) );
         }
 

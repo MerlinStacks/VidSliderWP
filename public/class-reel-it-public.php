@@ -53,7 +53,7 @@ class Reel_It_Public {
     /**
      * Per-request cache for should_enqueue_assets().
      *
-     * @since    1.7.2
+     * @since    1.6.2
      * @access   private
      * @var      bool|null
      */
@@ -209,7 +209,7 @@ class Reel_It_Public {
     /**
      * Resolve linked product objects for each video in one pass.
      *
-     * @since  1.7.2
+     * @since  1.6.2
      * @param  array $videos Video list passed to the template.
      * @return array<int,WC_Product> Map: video attachment ID => linked product.
      */
@@ -304,6 +304,9 @@ class Reel_It_Public {
         }
         if ( isset( $atts['feed_id'] ) ) {
             $atts['feed_id'] = intval( $atts['feed_id'] );
+        }
+        if ( empty( $atts['use_feed'] ) ) {
+            $atts['feed_id'] = 0;
         }
 
         // Step 3: Enforce global-only settings — these cannot be overridden per block.
@@ -463,13 +466,22 @@ class Reel_It_Public {
      */
     public function ajax_track_event() {
         $referer = wp_get_referer();
-        if ( false === $referer || 0 !== strpos( $referer, home_url( '/' ) ) ) {
+        $referer_parts = $referer ? wp_parse_url( $referer ) : false;
+        $home_parts    = wp_parse_url( home_url( '/' ) );
+        $referer_port  = isset( $referer_parts['port'] ) ? (int) $referer_parts['port'] : null;
+        $home_port     = isset( $home_parts['port'] ) ? (int) $home_parts['port'] : null;
+
+        if (
+            ! is_array( $referer_parts ) ||
+            empty( $referer_parts['host'] ) ||
+            empty( $home_parts['host'] ) ||
+            strtolower( $referer_parts['host'] ) !== strtolower( $home_parts['host'] ) ||
+            $referer_port !== $home_port
+        ) {
             wp_send_json_error( array( 'message' => __( 'Invalid request origin', 'reel-it' ) ) );
         }
 
-        if ( is_user_logged_in() ) {
-            check_ajax_referer( 'reel_it_nonce', 'nonce' );
-        }
+        check_ajax_referer( 'reel_it_nonce', 'nonce' );
         
         $event_type = isset( $_POST['event_type'] ) ? sanitize_text_field( wp_unslash( $_POST['event_type'] ) ) : '';
         $video_id   = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
@@ -483,6 +495,12 @@ class Reel_It_Public {
             wp_send_json_error( array( 'message' => __( 'Invalid data', 'reel-it' ) ) );
         }
 
+        if ( strlen( $session_id ) > 64 ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid session', 'reel-it' ) ) );
+        }
+
+        $watch_time = min( $watch_time, DAY_IN_SECONDS );
+
         // Validate event type
         $allowed_events = array( 'play', 'complete', 'product_click' );
         if ( ! in_array( $event_type, $allowed_events, true ) ) {
@@ -493,6 +511,27 @@ class Reel_It_Public {
         $video_post = get_post( $video_id );
         if ( ! $video_post || 'attachment' !== $video_post->post_type || 0 !== strpos( (string) get_post_mime_type( $video_id ), 'video/' ) ) {
             wp_send_json_error( array( 'message' => __( 'Invalid video', 'reel-it' ) ) );
+        }
+
+        if ( $feed_id > 0 ) {
+            global $wpdb;
+            $relationship_id = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT id FROM {$wpdb->prefix}reel_it_feed_videos WHERE feed_id = %d AND video_id = %d",
+                    $feed_id,
+                    $video_id
+                )
+            );
+            if ( ! $relationship_id ) {
+                wp_send_json_error( array( 'message' => __( 'Invalid gallery video', 'reel-it' ) ) );
+            }
+        }
+
+        if ( $product_id > 0 ) {
+            $linked_products = get_post_meta( $video_id, '_reel_it_linked_products', true );
+            if ( ! is_array( $linked_products ) || ! in_array( $product_id, array_map( 'absint', $linked_products ), true ) ) {
+                wp_send_json_error( array( 'message' => __( 'Invalid linked product', 'reel-it' ) ) );
+            }
         }
 
         // Rate limit: max 30 events per IP per minute to prevent bot spam.
@@ -531,34 +570,13 @@ class Reel_It_Public {
     }
 
     /**
-     * Add DNS prefetch hint for the AJAX endpoint.
-     *
-     * Why: the first analytics POST from the frontend incurs a cold DNS lookup.
-     * Pre-resolving saves ~50-100ms on that request.
-     *
-     * @since  1.7.0
-     * @param  array  $urls          Existing resource hint URLs.
-     * @param  string $relation_type Hint type (dns-prefetch, preconnect, etc.).
-     * @return array
-     */
-    public function add_resource_hints( $urls, $relation_type ) {
-        if ( 'dns-prefetch' === $relation_type ) {
-            $parsed = wp_parse_url( admin_url( 'admin-ajax.php' ) );
-            if ( ! empty( $parsed['host'] ) ) {
-                $urls[] = '//' . $parsed['host'];
-            }
-        }
-        return $urls;
-    }
-
-    /**
      * Get the real client IP, accounting for common proxy headers.
      *
-     * @since  1.7.1
+     * @since  1.6.2
      * @return string Client IP address.
      */
     private function get_client_ip() {
-        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : 'unknown';
         $trusted_proxies = apply_filters( 'reel_it_trusted_proxies', array() );
 
         $headers = array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_REAL_IP' );

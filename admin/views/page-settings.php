@@ -137,7 +137,7 @@ if ( ! defined( 'WPINC' ) ) {
                             <div class="reel-it-form-row">
                                 <label for="max_file_size"><?php esc_html_e( 'Maximum File Size (MB)', 'reel-it' ); ?></label>
                                 <?php $size = isset( $options['max_file_size'] ) ? $options['max_file_size'] : Reel_It::DEFAULT_MAX_FILE_SIZE; ?>
-                                <input type="number" id="max_file_size" name="reel_it_options[max_file_size]" value="<?php echo esc_attr( $size ); ?>" class="regular-text">
+                                <input type="number" id="max_file_size" name="reel_it_options[max_file_size]" value="<?php echo esc_attr( $size ); ?>" min="1" max="2048" class="regular-text">
                                 <p class="description"><?php esc_html_e( 'Maximum file size for video uploads in MB', 'reel-it' ); ?></p>
                             </div>
 
@@ -149,7 +149,7 @@ if ( ! defined( 'WPINC' ) ) {
                                     $formats = array(
                                         'mp4' => 'MP4', 'webm' => 'WebM', 'ogg' => 'OGG', 'mov' => 'QuickTime', 'avi' => 'AVI'
                                     );
-                                    $selected = isset( $options['allowed_formats'] ) ? $options['allowed_formats'] : array();
+                                    $selected = isset( $options['allowed_formats'] ) ? $options['allowed_formats'] : array( 'mp4', 'webm', 'ogg' );
                                     foreach ( $formats as $key => $label ) {
                                         $checked = in_array( $key, $selected, true );
                                         echo '<label class="reel-it-checkbox-inline">';

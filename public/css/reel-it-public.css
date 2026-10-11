@@ -103,6 +103,13 @@
     will-change: opacity;
 }
 
+.reel-it-poster-placeholder {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: #1a1a1a;
+}
+
 /* Hide poster when video is actively playing */
 .reel-it-video-container.playing .reel-it-poster {
     opacity: 0;
@@ -197,7 +204,7 @@
 /* Controls container — hidden by default; shown per-feature via JS class toggle */
 .reel-it-controls-container {
     position: absolute;
-    bottom: 8px;
+    top: 8px;
     right: 8px;
     display: none;
     gap: 8px;
@@ -255,6 +262,7 @@
 
 .reel-it-prev,
 .reel-it-next {
+    z-index: 20;
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid rgba(255, 255, 255, 0.3);
     color: #fff;
@@ -286,13 +294,6 @@
     background: rgba(0, 0, 0, 0.8);
     transform: translateY(-50%) scale(1.1);
     border-color: rgba(255, 255, 255, 0.5);
-}
-
-.reel-it-prev .dashicons,
-.reel-it-next .dashicons {
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
 }
 
 .reel-it-thumbnails {

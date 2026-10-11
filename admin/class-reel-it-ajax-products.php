@@ -137,6 +137,10 @@ class Reel_It_Ajax_Products {
     public function ajax_save_video_products() {
         Reel_It_Ajax_Helper::verify();
 
+        if ( ! Reel_It::is_shop_active() ) {
+            wp_send_json_error( array( 'message' => __( 'WooCommerce is not active.', 'reel-it' ) ) );
+        }
+
         $video_id = isset( $_POST['video_id'] ) ? intval( $_POST['video_id'] ) : 0;
         // BUG-04 fix: validate the post is actually an attachment
         if ( ! $video_id || get_post_type( $video_id ) !== 'attachment' ) {
@@ -144,8 +148,13 @@ class Reel_It_Ajax_Products {
         }
         // BUG-05 fix: validate as array and unslash before intval mapping
         $product_ids = isset( $_POST['products'] ) && is_array( $_POST['products'] )
-            ? array_map( 'intval', wp_unslash( $_POST['products'] ) )
+            ? array_values( array_unique( array_filter( array_map( 'absint', wp_unslash( $_POST['products'] ) ) ) ) )
             : array();
+
+        $product_ids = array_slice( $product_ids, 0, 1 );
+        if ( ! empty( $product_ids ) && ! wc_get_product( $product_ids[0] ) ) {
+            wp_send_json_error( array( 'message' => __( 'Invalid product.', 'reel-it' ) ) );
+        }
 
         update_post_meta( $video_id, '_reel_it_linked_products', $product_ids );
         wp_cache_delete( 'reel_it_video_products_' . $video_id, 'reel_it' );

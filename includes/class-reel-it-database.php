@@ -69,6 +69,14 @@ class Reel_It_Database {
      * @since    1.1.1
      */
     public function __construct() {
+        $this->set_table_names();
+        add_action( 'switch_blog', array( $this, 'set_table_names' ) );
+    }
+
+    /**
+     * Resolve tables again whenever WordPress switches sites.
+     */
+    public function set_table_names() {
         global $wpdb;
         $this->feeds_table = $wpdb->prefix . 'reel_it_feeds';
         $this->feed_videos_table = $wpdb->prefix . 'reel_it_feed_videos';
@@ -83,6 +91,8 @@ class Reel_It_Database {
         global $wpdb;
         
         $charset_collate = $wpdb->get_charset_collate();
+
+        $this->cleanup_relationship_rows();
 
         // Feeds table
         // Why: dbDelta requires bare CREATE TABLE (no IF NOT EXISTS) to parse the
@@ -108,7 +118,8 @@ class Reel_It_Database {
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (id),
             KEY feed_id (feed_id),
-            KEY video_id (video_id)
+            KEY video_id (video_id),
+            UNIQUE KEY feed_video (feed_id, video_id)
         ) $charset_collate;";
 
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -117,6 +128,39 @@ class Reel_It_Database {
         
         // Check if we need to migrate existing tables
         $this->migrate_video_id_column();
+    }
+
+    /**
+     * Remove invalid relationship rows before dbDelta adds the unique index.
+     *
+     * @since 1.6.2
+     */
+    private function cleanup_relationship_rows() {
+        global $wpdb;
+
+        $feeds_exists = $wpdb->get_var(
+            $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $this->feeds_table ) )
+        );
+        $videos_exists = $wpdb->get_var(
+            $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $this->feed_videos_table ) )
+        );
+
+        if ( $feeds_exists !== $this->feeds_table || $videos_exists !== $this->feed_videos_table ) {
+            return;
+        }
+
+        $wpdb->query(
+            "DELETE fv FROM {$this->feed_videos_table} fv
+             LEFT JOIN {$this->feeds_table} f ON f.id = fv.feed_id
+             WHERE f.id IS NULL"
+        );
+        $wpdb->query(
+            "DELETE duplicate_row FROM {$this->feed_videos_table} duplicate_row
+             INNER JOIN {$this->feed_videos_table} original_row
+                ON original_row.feed_id = duplicate_row.feed_id
+               AND original_row.video_id = duplicate_row.video_id
+               AND original_row.id < duplicate_row.id"
+        );
     }
     
     /**
@@ -208,7 +252,13 @@ class Reel_It_Database {
             "SELECT
                 f.*,
                 COUNT(fv.video_id) as video_count,
-                MIN(fv.video_id) as first_video_id
+                (
+                    SELECT fv_first.video_id
+                    FROM {$wpdb->prefix}reel_it_feed_videos fv_first
+                    WHERE fv_first.feed_id = f.id
+                    ORDER BY fv_first.sort_order ASC, fv_first.id ASC
+                    LIMIT 1
+                ) as first_video_id
             FROM {$wpdb->prefix}reel_it_feeds f
             LEFT JOIN {$wpdb->prefix}reel_it_feed_videos fv ON f.id = fv.feed_id
             GROUP BY f.id
@@ -246,7 +296,13 @@ class Reel_It_Database {
                 f.id,
                 f.name,
                 COUNT(fv.video_id) as video_count,
-                MIN(fv.video_id) as first_video_id
+                (
+                    SELECT fv_first.video_id
+                    FROM {$wpdb->prefix}reel_it_feed_videos fv_first
+                    WHERE fv_first.feed_id = f.id
+                    ORDER BY fv_first.sort_order ASC, fv_first.id ASC
+                    LIMIT 1
+                ) as first_video_id
             FROM {$wpdb->prefix}reel_it_feeds f
             LEFT JOIN {$wpdb->prefix}reel_it_feed_videos fv ON f.id = fv.feed_id
             WHERE f.id = %d
@@ -343,6 +399,10 @@ class Reel_It_Database {
      */
     public function update_feed( $feed_id, $name, $description = '' ) {
         global $wpdb;
+
+        if ( ! $this->get_feed( $feed_id ) ) {
+            return false;
+        }
         
         $result = $wpdb->update(
             $this->feeds_table,
@@ -371,6 +431,10 @@ class Reel_It_Database {
      */
     public function delete_feed( $feed_id ) {
         global $wpdb;
+
+        if ( ! $this->get_feed( $feed_id ) ) {
+            return false;
+        }
         
         // First delete all videos in the feed
         $wpdb->delete(
@@ -450,11 +514,35 @@ class Reel_It_Database {
      * @since    1.1.1
      * @param    int    $feed_id    Feed ID
      * @param    int    $video_id   Video ID
-     * @param    int    $sort_order Sort order
+     * @param    int|null $sort_order Sort order, or null to append.
      * @return   int|false    Feed video ID or false on failure
      */
-    public function add_video_to_feed( $feed_id, $video_id, $sort_order = 0 ) {
+    public function add_video_to_feed( $feed_id, $video_id, $sort_order = null ) {
         global $wpdb;
+
+        if ( ! $this->get_feed( $feed_id ) ) {
+            return false;
+        }
+
+        $existing_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM {$this->feed_videos_table} WHERE feed_id = %d AND video_id = %d",
+                $feed_id,
+                $video_id
+            )
+        );
+        if ( $existing_id ) {
+            return false;
+        }
+
+        if ( null === $sort_order ) {
+            $sort_order = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COALESCE(MAX(sort_order), -1) + 1 FROM {$this->feed_videos_table} WHERE feed_id = %d",
+                    $feed_id
+                )
+            );
+        }
         
         $result = $wpdb->insert(
             $this->feed_videos_table,
@@ -661,8 +749,6 @@ class Reel_It_Database {
      * @since 1.2.0
      */
     private function clear_feed_cache( $feed_id = 0 ) {
-        // Why: keep transient delete for backwards compat during upgrade transition.
-        delete_transient( 'reel_it_feeds_data' );
         wp_cache_delete( 'reel_it_all_feeds', 'reel_it' );
         wp_cache_delete( 'reel_it_feeds_thumbs', 'reel_it' );
         if ( $feed_id ) {

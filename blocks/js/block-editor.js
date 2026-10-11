@@ -173,10 +173,16 @@
         const [search, setSearch] = useState('');
         const [videoLibrary, setVideoLibrary] = useState([]);
         const [loadingLibrary, setLoadingLibrary] = useState(false);
+        const [currentPage, setCurrentPage] = useState(1);
+        const [totalPages, setTotalPages] = useState(0);
+        const [libraryError, setLibraryError] = useState('');
+        const libraryRequest = useRef(0);
 
         // Load video library
         const loadVideoLibrary = useCallback((searchTerm = '', page = 1) => {
+            const request = ++libraryRequest.current;
             setLoadingLibrary(true);
+            setLibraryError('');
 
             const formData = new FormData();
             formData.append('action', 'reel_it_query_videos');
@@ -190,17 +196,24 @@
             })
                 .then(response => response.json())
                 .then(data => {
+                    if (request !== libraryRequest.current) return;
                     if (data.success && data.data && Array.isArray(data.data.videos)) {
+                        setCurrentPage(page);
+                        setTotalPages(Number(data.data.pages) || 0);
                         if (page === 1) {
                             setVideoLibrary(data.data.videos);
                         } else {
                             setVideoLibrary(prev => [...prev, ...data.data.videos]);
                         }
+                    } else {
+                        setLibraryError(__('Unable to load videos.', 'reel-it'));
                     }
                 })
-                .catch(() => { })
+                .catch(() => {
+                    if (request === libraryRequest.current) setLibraryError(__('Unable to load videos.', 'reel-it'));
+                })
                 .finally(() => {
-                    setLoadingLibrary(false);
+                    if (request === libraryRequest.current) setLoadingLibrary(false);
                 });
         }, []);
 
@@ -212,12 +225,21 @@
         // Handle search with debounce to avoid AJAX spam on fast typing
         const searchTimerRef = useRef(null);
         const handleSearch = (value) => {
+            libraryRequest.current++;
             setSearch(value);
+            setVideoLibrary([]);
+            setTotalPages(0);
+            setLoadingLibrary(true);
             if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
             searchTimerRef.current = setTimeout(() => {
                 loadVideoLibrary(value, 1);
             }, 400);
         };
+
+        useEffect(() => () => {
+            libraryRequest.current++;
+            if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        }, []);
 
         // Handle video selection from library
         const handleVideoSelect = (video) => {
@@ -242,7 +264,7 @@
 
             // Video library
             el('div', { className: 'reel-it-video-library' },
-                loadingLibrary ?
+                loadingLibrary && videoLibrary.length === 0 ?
                     el('div', { className: 'reel-it-loading' }, el(Spinner)) :
                     videoLibrary.length === 0 ?
                         el(Notice, { status: 'info', isDismissible: false },
@@ -273,7 +295,13 @@
                                 )
                             )
                         )
-            )
+            ),
+            libraryError && el(Notice, { status: 'error', isDismissible: false }, libraryError),
+            currentPage < totalPages && el(Button, {
+                variant: 'secondary',
+                disabled: loadingLibrary,
+                onClick: () => loadVideoLibrary(search, currentPage + 1)
+            }, loadingLibrary ? __('Loading...', 'reel-it') : __('Load more videos', 'reel-it'))
         );
     };
 
@@ -616,7 +644,7 @@
                         el(ToggleControl, {
                             label: __('Use Video Gallery', 'reel-it'),
                             checked: useFeed,
-                            onChange: (value) => setAttributes({ useFeed: value })
+                            onChange: (value) => setAttributes({ useFeed: value, feedId: value ? feedId : 0 })
                         })
                     ),
 

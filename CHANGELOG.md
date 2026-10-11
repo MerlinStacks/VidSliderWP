@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.6.3] - 2026-10-11
+
+### Fixed
+- Prevented stale product-tag requests from overwriting the current video's selection or saving before loading completes.
+- Kept navigation above slides and moved audio controls away from product overlays.
+- Restricted autoplay to visible videos, cancelled off-screen advancement, and released video listeners during teardown.
+- Matched block layout defaults between editor and frontend and added video-library pagination.
+- Appended new gallery videos after the existing order and cleared stale gallery IDs from manual-video analytics.
+- Added network-wide activation, deactivation, uninstall, new-site initialization, and site-aware database table names.
+- Made native video controls accessible when JavaScript is disabled.
+
+### Tests
+- Added DOM-based playback and product-tagging regressions plus WordPress ordering, rendering, and multisite tests.
+
+## [1.6.2] - 2026-07-17
+
+### Fixed
+- Corrected block-editor gallery permissions and rejected orphaned or duplicate gallery-video relationships.
+- Hardened video uploads, product tagging, analytics origins, and linked gallery/product validation.
+- Replaced frontend Dashicons and stopped posterless slides from loading video metadata before playback.
+- Corrected gallery cover selection to follow configured video order.
+
+### Improved
+- Removed unused admin and block assets, remote admin fonts, redundant resource hints, and dead analytics code.
+- Added WordPress coding standards and PHPUnit configuration with data-integrity and settings tests.
+
 ## [1.6.1] - 2026-06-27
 
 ### Fixed

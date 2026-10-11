@@ -157,9 +157,15 @@ class Reel_It_Analytics {
      * object-cache backends), we bump a shared version number so every
      * existing key is considered stale on the next lookup.
      *
-     * @since 1.7.1
+     * @since 1.6.2
      */
     private function clear_stats_cache() {
+        $last_invalidated = (int) get_transient( 'reel_it_stats_invalidated_at' );
+        if ( $last_invalidated >= time() - MINUTE_IN_SECONDS ) {
+            return;
+        }
+
+        set_transient( 'reel_it_stats_invalidated_at', time(), DAY_IN_SECONDS );
         set_transient( 'reel_it_stats_version', time(), DAY_IN_SECONDS );
     }
 
@@ -170,7 +176,7 @@ class Reel_It_Analytics {
      * backends (Redis/Memcached). A version number lets us atomically
      * invalidate every stats key at once.
      *
-     * @since 1.7.1
+     * @since 1.6.2
      * @return int
      */
     private function get_cache_version() {
@@ -287,45 +293,9 @@ class Reel_It_Analytics {
     }
 
     /**
-     * Get daily stats for charts.
-     *
-     * @since 1.4.0
-     * @param int $days Number of days.
-     * @return array
-     */
-    public function get_daily_stats( $days = 30 ) {
-        $days      = max( 1, absint( $days ) );
-        $cache_key = 'reel_it_daily_' . $days . '_' . $this->get_cache_version();
-        $cached    = get_transient( $cache_key );
-        if ( false !== $cached ) {
-            return $cached;
-        }
-
-        global $wpdb;
-
-        $date_limit = wp_date( 'Y-m-d', time() - ( $days * DAY_IN_SECONDS ) );
-
-        $results = $wpdb->get_results( $wpdb->prepare(
-            "SELECT 
-                DATE(created_at) as date,
-                SUM(CASE WHEN event_type = 'play' THEN 1 ELSE 0 END) as plays,
-                SUM(CASE WHEN event_type = 'complete' THEN 1 ELSE 0 END) as completions,
-                SUM(CASE WHEN event_type = 'product_click' THEN 1 ELSE 0 END) as clicks
-            FROM {$this->table_name}
-            WHERE created_at >= %s
-            GROUP BY DATE(created_at)
-            ORDER BY date ASC",
-            $date_limit
-        ), ARRAY_A ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-
-        set_transient( $cache_key, $results, MINUTE_IN_SECONDS * 5 );
-        return $results;
-    }
-
-    /**
      * Get analytics metrics keyed by video ID.
      *
-     * @since 1.8.0
+     * @since 1.6.2
      * @param array $video_ids List of attachment IDs.
      * @param int   $days      Lookback window.
      * @return array

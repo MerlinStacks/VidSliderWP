@@ -111,13 +111,9 @@
 
         video.pause();
 
-        if (video.classList.contains('reel-it-preview-video')) {
-            video.currentTime = 0;
-        } else {
-            video.removeAttribute('src');
-            video.load(); /* Why: releases network/decode resources immediately */
-            video.remove();
-        }
+        video.removeAttribute('src');
+        video.load(); /* Why: releases network/decode resources immediately */
+        video.remove();
 
         vc.classList.remove('playing', 'muted');
 
@@ -157,6 +153,11 @@
             this.sliderSpeed = parseInt(element.dataset.sliderSpeed, 10) || 0;
             this.trackedPlays = new Set();
             this.trackedCompletions = new Set();
+            this.visibilityObserver = null;
+            this.initialAutoplayPending = element.dataset.autoplay === '1';
+            this.pendingAutoplayIndex = null;
+            this.destroyed = false;
+            this.scrollResetTimeout = null;
 
             /* Why: store bound handlers so we can remove them in destroy() */
             this._boundHandlers = [];
@@ -174,18 +175,79 @@
             this.container.classList.remove('loading');
             this.bindEvents();
 
-            /* Why: autoplay creates the first video on demand and plays it muted,
-               matching the old <video autoplay muted> behaviour */
-            if (this.container.dataset.autoplay === '1') {
-                const vc = this._vc(0);
-                if (vc) {
-                    const video = createVideo(vc);
-                    if (video) {
-                        this._bindVideoEvents(vc, video);
-                        this.playVideo(video);
-                    }
-                }
+            this.observeVisibility();
+        }
+
+        /** Check actual viewport overlap, including horizontal carousel clipping. */
+        isVisible(element, clip) {
+            if (this.destroyed || document.hidden || !element || !element.isConnected) return false;
+            const rect = element.getBoundingClientRect();
+            const bounds = clip ? clip.getBoundingClientRect() : {
+                top: 0, left: 0, right: window.innerWidth, bottom: window.innerHeight
+            };
+            const width = Math.max(0, Math.min(rect.right, bounds.right, window.innerWidth) - Math.max(rect.left, bounds.left, 0));
+            const height = Math.max(0, Math.min(rect.bottom, bounds.bottom, window.innerHeight) - Math.max(rect.top, bounds.top, 0));
+            return rect.width > 0 && rect.height > 0 && width * height >= rect.width * rect.height * 0.1;
+        }
+
+        observeVisibility() {
+            const sync = () => this.syncVisibility();
+            if ('IntersectionObserver' in window) {
+                this.visibilityObserver = new IntersectionObserver(sync, { threshold: [0, 0.1] });
+                this.videoContainers.forEach((vc) => {
+                    if (vc) this.visibilityObserver.observe(vc);
+                });
+            } else {
+                this._on(window, 'scroll', sync, { passive: true });
+                this._on(window, 'resize', sync, { passive: true });
             }
+            this._on(document, 'visibilitychange', sync);
+            this._on(this.slider, 'scroll', sync, { passive: true });
+            sync();
+        }
+
+        syncVisibility() {
+            const visible = this.videoContainers.some((vc) => this.isVisible(vc, this.slider));
+            if (!this.isVisible(this._vc(this.currentSlide), this.slider)) this.clearAutoAdvance();
+            if (!visible) {
+                this.clearAutoAdvance();
+                this.pendingAutoplayIndex = null;
+            }
+            this.videoContainers.forEach((vc, index) => {
+                if (vc && !this.isVisible(vc, this.slider) && this._video(index)) {
+                    this.destroyVideo(vc);
+                    if (index === this.currentSlide) this.clearAutoAdvance();
+                }
+            });
+            if (this.initialAutoplayPending && this.isVisible(this._vc(0), this.slider)) {
+                this.initialAutoplayPending = false;
+                this.pendingAutoplayIndex = 0;
+            }
+            this.tryPendingPlayback();
+        }
+
+        tryPendingPlayback() {
+            const index = this.pendingAutoplayIndex;
+            if (index === null || !this.isVisible(this._vc(index), this.slider)) return;
+            this.pendingAutoplayIndex = null;
+            const vc = this._vc(index);
+            const video = createVideo(vc);
+            if (video) {
+                this._bindVideoEvents(vc, video);
+                this.playVideo(video);
+            }
+        }
+
+        /** Release listener references as well as the video DOM/network resources. */
+        destroyVideo(vc) {
+            const video = vc.querySelector('video.reel-it-video');
+            if (!video) return;
+            this._boundHandlers = this._boundHandlers.filter((h) => {
+                if (h.el !== video) return true;
+                h.el.removeEventListener(h.event, h.handler, h.options);
+                return false;
+            });
+            destroyVideo(vc);
         }
 
         /**
@@ -235,6 +297,8 @@
 
                 const vc = overlay.closest('.reel-it-video-container');
                 if (!vc) return;
+                this.initialAutoplayPending = false;
+                this.pendingAutoplayIndex = null;
 
                 const existingVideo = vc.querySelector('video.reel-it-video');
                 if (existingVideo && !existingVideo.paused) {
@@ -324,24 +388,6 @@
                 vc.classList.toggle('muted', video.muted);
             });
 
-            /* 7. Hover preload: prime browser cache on desktop so click-to-play feels instant */
-            if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
-                this.slides.forEach((slide) => {
-                    this._on(slide, 'mouseenter', () => {
-                        const vc = slide.querySelector('.reel-it-video-container');
-                        if (!vc || vc.dataset.preloaded) return;
-                        const src = vc.dataset.videoSrc;
-                        if (!src) return;
-
-                        const link = document.createElement('link');
-                        link.rel = 'preload';
-                        link.as = 'video';
-                        link.href = src;
-                        document.head.appendChild(link);
-                        vc.dataset.preloaded = 'true';
-                    });
-                });
-            }
         }
 
         /**
@@ -381,6 +427,8 @@
 
         playVideo(video) {
             if (!video) return;
+            const vc = video.closest('.reel-it-video-container');
+            if (!this.isVisible(vc, this.slider)) return;
 
             this.clearAutoAdvance();
 
@@ -390,13 +438,17 @@
             const playPromise = video.play();
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    const vc = video.closest('.reel-it-video-container');
+                    if (this.destroyed || !video.isConnected || vc.querySelector('video.reel-it-video') !== video) return;
+                    if (!this.isVisible(vc, this.slider)) {
+                        this.destroyVideo(vc);
+                        return;
+                    }
                     vc.classList.add('playing', 'muted');
 
                     const controls = vc.querySelector('.reel-it-controls-container');
                     if (controls) controls.classList.add('visible');
                 }).catch(() => {
-                    const vc = video.closest('.reel-it-video-container');
+                    if (this.destroyed || !video.isConnected || vc.querySelector('video.reel-it-video') !== video) return;
                     vc.classList.remove('playing');
                     video.controls = true;
                 });
@@ -408,6 +460,10 @@
             const vc = this._vc(index);
             const video = this._video(index);
             if (!vc || !video) return;
+            if (!this.isVisible(vc, this.slider)) {
+                this.destroyVideo(vc);
+                return;
+            }
 
             const videoId = vc.dataset.videoId;
 
@@ -432,7 +488,7 @@
             this.slides.forEach((_, i) => {
                 if (i !== index) {
                     const otherVc = this._vc(i);
-                    if (otherVc) destroyVideo(otherVc);
+                    if (otherVc) this.destroyVideo(otherVc);
                 }
             });
 
@@ -463,11 +519,12 @@
             }
 
             /* Clean up finished video */
-            destroyVideo(vc);
+            this.destroyVideo(vc);
 
-            if (this.sequentialAutoplay) {
+            if (this.sequentialAutoplay && this.isVisible(vc, this.slider)) {
                 this.clearAutoAdvance();
                 this.autoAdvanceTimeout = setTimeout(() => {
+                    if (!this.isVisible(this._vc(this.currentSlide), this.slider)) return;
                     this.step(1, true);
                 }, Math.max(0, this.sliderSpeed));
             }
@@ -486,10 +543,12 @@
             if (index < 0 || index >= this.totalSlides) return;
 
             this.clearAutoAdvance();
+            this.initialAutoplayPending = false;
+            this.pendingAutoplayIndex = null;
 
             if (index !== this.currentSlide) {
                 const currentVc = this._vc(this.currentSlide);
-                if (currentVc) destroyVideo(currentVc);
+                if (currentVc) this.destroyVideo(currentVc);
             }
 
             this.currentSlide = index;
@@ -505,14 +564,8 @@
             this.ensureVisible(index);
 
             if (autoPlay) {
-                const vc = this._vc(index);
-                if (vc) {
-                    const video = createVideo(vc);
-                    if (video) {
-                        this._bindVideoEvents(vc, video);
-                        this.playVideo(video);
-                    }
-                }
+                this.pendingAutoplayIndex = index;
+                this.tryPendingPlayback();
             }
         }
 
@@ -539,7 +592,8 @@
                 });
 
                 /* Why: 400ms matches the previous jQuery animate duration */
-                setTimeout(() => { this.isScrolling = false; }, 400);
+                clearTimeout(this.scrollResetTimeout);
+                this.scrollResetTimeout = setTimeout(() => { this.isScrolling = false; }, 400);
             }
         }
 
@@ -582,24 +636,30 @@
         }
 
         destroy() {
+            this.destroyed = true;
             this.clearAutoAdvance();
+            this.pendingAutoplayIndex = null;
+            clearTimeout(this.scrollTimeout);
+            clearTimeout(this.scrollResetTimeout);
+            if (this.visibilityObserver) this.visibilityObserver.disconnect();
 
             /* Destroy any active videos */
-            this.slides.forEach(function (slide) {
+            this.slides.forEach((slide) => {
                 const vc = slide.querySelector('.reel-it-video-container');
-                if (vc) destroyVideo(vc);
+                if (vc) this.destroyVideo(vc);
             });
 
             this._boundHandlers.forEach(function (h) {
                 h.el.removeEventListener(h.event, h.handler, h.options);
             });
             this._boundHandlers = [];
+            delete this.container.dataset.reelItInitialized;
         }
     }
 
     /* Why: module-scoped so both init and beforeunload can access it */
-    var viewportObs = null;
     var sliderObs = null;
+    var mutationObs = null;
 
     document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () {
@@ -641,34 +701,42 @@
                 initSliders(document);
             }
 
+            if ('MutationObserver' in window) {
+                mutationObs = new MutationObserver(function (records) {
+                    records.forEach(function (record) {
+                        record.addedNodes.forEach(function (node) {
+                            if (!(node instanceof Element)) return;
+
+                            const containers = [];
+                            if (node.matches('.reel-it-container')) containers.push(node);
+                            node.querySelectorAll('.reel-it-container').forEach(function (el) { containers.push(el); });
+                            containers.forEach(function (el) {
+                                if (sliderObs) {
+                                    sliderObs.observe(el);
+                                } else {
+                                    initSliderIfNeeded(el);
+                                }
+                            });
+
+                        });
+                    });
+                    for (let i = sliders.length - 1; i >= 0; i--) {
+                        if (!sliders[i].container.isConnected) {
+                            sliders[i].destroy();
+                            sliders.splice(i, 1);
+                        }
+                    }
+                });
+                mutationObs.observe(document.body, { childList: true, subtree: true });
+            }
+
             window.addEventListener('beforeunload', function () {
                 sliders.forEach(function (s) { s.destroy(); });
-                if (viewportObs) viewportObs.disconnect();
                 if (sliderObs) sliderObs.disconnect();
+                if (mutationObs) mutationObs.disconnect();
             });
 
         }, 100);
-
-        /* Pause & destroy videos when their container scrolls out of viewport */
-        if ('IntersectionObserver' in window) {
-            viewportObs = new IntersectionObserver(function (entries) {
-                entries.forEach(function (entry) {
-                    const vc = entry.target;
-                    if (!entry.isIntersecting) {
-                        /* Why: guard against destroying freshly-autoplayed videos before
-                           the user sees them (BUG-01 race condition) */
-                        const video = vc.querySelector('video.reel-it-video');
-                        if (video && video.currentTime < 1) return;
-                        destroyVideo(vc);
-                    }
-                });
-            }, { threshold: 0.1 });
-
-            /* Observe all video containers (not videos, since they don't exist yet) */
-            document.querySelectorAll('.reel-it-video-container').forEach(function (vc) {
-                viewportObs.observe(vc);
-            });
-        }
 
         /* Mark server-provided poster images as loaded so shimmer stops */
         document.querySelectorAll('.reel-it-poster').forEach(function (img) {

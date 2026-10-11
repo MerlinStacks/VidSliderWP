@@ -1,9 +1,7 @@
 /**
  * Shared admin utility helpers for the Reel It plugin.
  *
- * Why: escapeHtml() was duplicated in reel-it-admin.js and
- * reel-it-settings.js. Both files now import this shared version
- * via a wp_enqueue_script dependency.
+ * Used by the gallery/settings UI to safely render AJAX response data.
  *
  * @since 1.6.0
  * @package Reel_It

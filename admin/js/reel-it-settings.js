@@ -549,9 +549,13 @@ jQuery(document).ready(function ($) {
     function initProductTagging() {
         let currentVideoId = 0;
         let taggedProducts = [];
+        let productLoadVersion = 0;
+        let loadingProducts = false;
         const $productModal = $('#reel-it-product-modal');
 
         function closeProductModal() {
+            productLoadVersion++;
+            currentVideoId = 0;
             $productModal.hide().addClass('reel-it-hidden');
         }
 
@@ -559,6 +563,10 @@ jQuery(document).ready(function ($) {
         $(document).on('click', '.reel-it-tag-product-btn', function (e) {
             e.preventDefault();
             currentVideoId = $(this).data('video-id');
+            taggedProducts = [];
+            loadingProducts = true;
+            $('#reel-it-save-tags').prop('disabled', true).text(reelItSettings.strings.saveTags);
+            $('#reel-it-no-tags').hide();
             $productModal.removeClass('reel-it-hidden').css('display', 'flex');
 
             // Show single-product limitation notice above search
@@ -596,6 +604,7 @@ jQuery(document).ready(function ($) {
         $('#reel-it-product-search').on('input', function () {
             clearTimeout(searchTimeout);
             const term = $(this).val().trim();
+            const version = productLoadVersion;
             const $results = $('#reel-it-product-results');
             const $spinner = $('#reel-it-product-spinner');
 
@@ -612,6 +621,7 @@ jQuery(document).ready(function ($) {
                     nonce: reelItSettings.nonce,
                     term: term
                 }, function (response) {
+                    if (version !== productLoadVersion || term !== $('#reel-it-product-search').val().trim()) return;
                     $results.empty();
                     if (response.success && response.data.results.length) {
                         response.data.results.forEach(p => {
@@ -638,6 +648,7 @@ jQuery(document).ready(function ($) {
 
         // Select Product
         $(document).on('click', '#reel-it-product-results li', function () {
+            if (loadingProducts) return;
             const p = {
                 id: $(this).data('id'),
                 text: $(this).data('text'),
@@ -662,6 +673,9 @@ jQuery(document).ready(function ($) {
         // Save Tags
         $('#reel-it-save-tags').on('click', function (e) {
             e.preventDefault();
+            if (loadingProducts || !currentVideoId) return;
+            const savedVideoId = currentVideoId;
+            const savedVersion = productLoadVersion;
             const $btn = $(this);
             $btn.prop('disabled', true).text(reelItSettings.strings.saving || 'Saving...');
 
@@ -670,9 +684,10 @@ jQuery(document).ready(function ($) {
             $.post(reelItSettings.ajaxUrl, {
                 action: 'reel_it_save_video_products',
                 nonce: reelItSettings.nonce,
-                video_id: currentVideoId,
+                video_id: savedVideoId,
                 products: productIds
             }, function (response) {
+                if (savedVersion !== productLoadVersion || savedVideoId !== currentVideoId) return;
                 if (response.success) {
                     showNotification(reelItSettings.strings.tagsSaved, 'success');
                     closeProductModal();
@@ -680,11 +695,13 @@ jQuery(document).ready(function ($) {
                     showNotification(reelItSettings.strings.tagsSaveFailed, 'error');
                 }
             }).always(() => {
-                $btn.prop('disabled', false).text(reelItSettings.strings.saveTags);
+                if (savedVersion !== productLoadVersion) return;
+                $btn.prop('disabled', loadingProducts).text(reelItSettings.strings.saveTags);
             });
         });
 
         function loadTaggedProducts(videoId) {
+            const version = ++productLoadVersion;
             $('#reel-it-tagged-list').html('<span class="spinner is-active" style="float:none;"></span>');
 
             $.post(reelItSettings.ajaxUrl, {
@@ -692,13 +709,20 @@ jQuery(document).ready(function ($) {
                 nonce: reelItSettings.nonce,
                 video_id: videoId
             }, function (response) {
+                if (version !== productLoadVersion || videoId !== currentVideoId) return;
                 if (response.success) {
                     taggedProducts = response.data.products;
+                    loadingProducts = false;
+                    $('#reel-it-save-tags').prop('disabled', false);
                     renderTaggedProducts();
                 } else {
-                    taggedProducts = [];
-                    renderTaggedProducts();
+                    $('#reel-it-tagged-list').empty();
+                    showNotification(reelItSettings.strings.errorOccurred, 'error');
                 }
+            }).fail(function () {
+                if (version !== productLoadVersion || videoId !== currentVideoId) return;
+                $('#reel-it-tagged-list').empty();
+                showNotification(reelItSettings.strings.connectionError, 'error');
             });
         }
 

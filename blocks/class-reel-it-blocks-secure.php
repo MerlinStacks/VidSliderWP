@@ -82,14 +82,6 @@ class Reel_It_Blocks_Secure {
             $this->version
         );
 
-        // Register block style
-        wp_register_style(
-            'reel-it-block-style',
-            plugin_dir_url( __FILE__ ) . 'css/block-style.css',
-            array(),
-            $this->version
-        );
-
         // Get default settings
         $options = get_option( 'reel_it_options', array() );
         
@@ -120,8 +112,8 @@ class Reel_It_Blocks_Secure {
      * @since    1.0.0
      */
     private function register_video_slider_block() {
-        // Why: 'style' key intentionally omitted — block-style.css uses a grid layout
-        // that conflicts with the public carousel flexbox. Public CSS handles frontend.
+        $options = get_option( 'reel_it_options', array() );
+        $videos_per_row = isset( $options['default_videos_per_row'] ) ? intval( $options['default_videos_per_row'] ) : 3;
         register_block_type( 'reel-it/video-slider', array(
             'editor_script' => 'reel-it-block-editor',
             'editor_style'  => 'reel-it-block-editor',
@@ -140,7 +132,7 @@ class Reel_It_Blocks_Secure {
                 ),
                 'videosPerRow' => array(
                     'type' => 'number',
-                    'default' => 3,
+                    'default' => $videos_per_row,
                 ),
                 'videosPerRowMobile' => array(
                     'type' => 'number',

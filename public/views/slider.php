@@ -25,6 +25,21 @@ if ( ! defined( 'WPINC' ) ) {
     die;
 }
 ?>
+<noscript>
+    <style>
+        .reel-it-container .reel-it-loader,
+        .reel-it-container .reel-it-video-overlay,
+        .reel-it-container .reel-it-controls-container,
+        .reel-it-container .reel-it-prev,
+        .reel-it-container .reel-it-next,
+        .reel-it-container .reel-it-thumbnails { display: none; }
+        .reel-it-container .reel-it-product-card { position: relative; inset: auto; margin-top: 8px; }
+        .reel-it-container .reel-it-video-container { aspect-ratio: auto; animation: none; }
+        .reel-it-container .reel-it-video { position: relative; height: auto; }
+        .reel-it-container .reel-it-poster,
+        .reel-it-container .reel-it-poster-placeholder { display: none; }
+    </style>
+</noscript>
 <div class="reel-it-container vsfw-videos-container loading" id="<?php echo esc_attr( $unique_id ); ?>" role="region" aria-roledescription="carousel" aria-label="<?php esc_attr_e( 'Video gallery', 'reel-it' ); ?>" tabindex="0" style="--reel-it-border-radius: <?php echo esc_attr( $border_radius ); ?>px; --reel-it-video-gap: <?php echo esc_attr( $video_gap ); ?>px; --reel-it-columns-desktop: <?php echo floatval( $atts['videos_per_row'] ); ?>; --reel-it-columns-mobile: <?php echo floatval( $atts['videos_per_row_mobile'] ); ?>;" data-slider-speed="<?php echo intval( $atts['slider_speed'] ); ?>" data-videos-per-row="<?php echo floatval( $atts['videos_per_row'] ); ?>" data-videos-per-row-mobile="<?php echo floatval( $atts['videos_per_row_mobile'] ); ?>" data-feed-id="<?php echo intval( $atts['feed_id'] ); ?>" <?php if ( ! empty( $atts['autoplay'] ) ) echo 'data-autoplay="1"'; ?>>
     <div class="reel-it-loader">
         <div class="reel-it-spinner"></div>
@@ -52,16 +67,7 @@ if ( ! defined( 'WPINC' ) ) {
                             width="360" height="640"
                         >
                     <?php else : ?>
-                        <video
-                            class="reel-it-video reel-it-preview-video"
-                            src="<?php echo esc_url( $video_url ); ?>"
-                            playsinline
-                            muted
-                            preload="metadata"
-                            data-video-src="<?php echo esc_url( $video_url ); ?>"
-                            data-video-id="<?php echo esc_attr( $video_id ); ?>"
-                            aria-label="<?php echo esc_attr( $video_title ? $video_title : __( 'Video preview', 'reel-it' ) ); ?>"
-                        ></video>
+                        <span class="reel-it-poster-placeholder" aria-hidden="true"></span>
                     <?php endif; ?>
                     <noscript>
                         <video
@@ -121,10 +127,10 @@ if ( ! defined( 'WPINC' ) ) {
              Only render if more than one slide exists. */ ?>
     <?php if ( $total_slides > 1 && ! empty( $atts['show_controls'] ) ) : ?>
         <button class="reel-it-prev" type="button" aria-label="<?php esc_attr_e( 'Previous slide', 'reel-it' ); ?>">
-            <span class="dashicons dashicons-arrow-left-alt2"></span>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
         </button>
         <button class="reel-it-next" type="button" aria-label="<?php esc_attr_e( 'Next slide', 'reel-it' ); ?>">
-            <span class="dashicons dashicons-arrow-right-alt2"></span>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
     <?php endif; ?>
 
@@ -140,7 +146,7 @@ if ( ! defined( 'WPINC' ) ) {
                     <?php if ( ! empty( $thumb_poster['url'] ) ) : ?>
                         <img src="<?php echo esc_url( $thumb_poster['url'] ); ?>" alt="" loading="lazy" width="60" height="106">
                     <?php else : ?>
-                        <span class="dashicons dashicons-video-alt3"></span>
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m10 8 6 4-6 4Z"/></svg>
                     <?php endif; ?>
                 </button>
             <?php endforeach; ?>

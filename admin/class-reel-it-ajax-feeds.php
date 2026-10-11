@@ -167,11 +167,15 @@ class Reel_It_Ajax_Feeds {
      * @return void Sends JSON response.
      */
     public function ajax_get_feed_videos() {
-        Reel_It_Ajax_Helper::verify();
+        Reel_It_Ajax_Helper::verify( 'upload_files' );
         $feed_id = isset( $_POST['feed_id'] ) ? intval( $_POST['feed_id'] ) : 0;
         $days    = isset( $_POST['days'] ) ? min( absint( $_POST['days'] ), 365 ) : 30;
         if ( $feed_id <= 0 ) {
             wp_send_json_error( array( 'message' => __( 'Invalid feed ID.', 'reel-it' ) ) );
+        }
+
+        if ( ! $this->get_database()->get_feed( $feed_id ) ) {
+            wp_send_json_error( array( 'message' => __( 'Gallery not found.', 'reel-it' ) ) );
         }
 
         $videos = $this->get_database()->get_feed_videos( $feed_id );
@@ -259,12 +263,16 @@ class Reel_It_Ajax_Feeds {
             }
         }
         $database = $this->get_database();
+        $updated = true;
         foreach ( $orders as $o ) {
             if ( isset( $o['video_id'] ) && isset( $o['sort_order'] ) ) {
-                $database->update_video_sort_order( $feed_id, intval( $o['video_id'] ), intval( $o['sort_order'] ) );
+                $updated = $database->update_video_sort_order( $feed_id, intval( $o['video_id'] ), intval( $o['sort_order'] ) ) && $updated;
             }
         }
-        // Why: update_video_sort_order() already calls clear_feed_cache() per update.
+        if ( ! $updated ) {
+            wp_send_json_error( array( 'message' => __( 'One or more videos could not be reordered.', 'reel-it' ) ) );
+        }
+
         wp_send_json_success( array( 'message' => __( 'Updated', 'reel-it' ) ) );
     }
 
@@ -288,7 +296,7 @@ class Reel_It_Ajax_Feeds {
      * @return void Sends JSON response.
      */
     public function ajax_get_feeds() {
-        Reel_It_Ajax_Helper::verify();
+        Reel_It_Ajax_Helper::verify( 'upload_files' );
         wp_send_json_success( array( 'feeds' => $this->get_database()->get_feeds() ) );
     }
 

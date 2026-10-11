@@ -125,9 +125,7 @@ class Reel_It {
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-reel-it-ajax-feeds.php';
         require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-reel-it-ajax-products.php';
 
-        $plugin_admin = new Reel_It_Admin( $this->get_plugin_name(), $this->get_version() );
-        $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-        $this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+        new Reel_It_Admin();
         
         $plugin_settings = new Reel_It_Settings( $this->get_plugin_name(), $this->get_version() );
         $this->loader->add_action( 'admin_menu', $plugin_settings, 'add_settings_page' );
@@ -179,10 +177,6 @@ class Reel_It {
         // Analytics tracking - allow both logged-in and guest users
         $this->loader->add_action( 'wp_ajax_reel_it_track_event', $plugin_public, 'ajax_track_event' );
         $this->loader->add_action( 'wp_ajax_nopriv_reel_it_track_event', $plugin_public, 'ajax_track_event' );
-
-        // Why: pre-resolve DNS for the AJAX endpoint so the first analytics
-        // POST avoids a cold DNS lookup (~50-100ms saving).
-        $this->loader->add_filter( 'wp_resource_hints', $plugin_public, 'add_resource_hints', 10, 2 );
     }
 
     /**

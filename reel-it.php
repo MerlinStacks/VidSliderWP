@@ -3,7 +3,7 @@
  * Plugin Name: Reel It - Shoppable Video Slider
  * Plugin URI: https://customkings.com.au/reel-it
  * Description: A WordPress plugin for showcasing videos in a slider using the block editor with video upload functionality.
- * Version: 1.6.1
+ * Version: 1.6.3
  * Author: SLDevs
  * Author URI: https://customkings.com.au
  * License: GPL v2 or later
@@ -11,7 +11,7 @@
  * Text Domain: reel-it
  * Domain Path: /languages
  * Requires at least: 5.8
- * Tested up to: 6.4
+ * Tested up to: 6.9
  * Requires PHP: 7.4
  */
 
@@ -23,7 +23,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * Currently plugin version.
  */
-define( 'REEL_IT_VERSION', '1.6.1' );
+define( 'REEL_IT_VERSION', '1.6.3' );
 
 /**
  * The core plugin class that is used to define internationalization,
@@ -34,7 +34,37 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-reel-it.php';
 /**
  * Activation hook - creates database tables on activation/upgrade.
  */
-function reel_it_activate() {
+function reel_it_activate( $network_wide = false ) {
+    if ( is_multisite() && $network_wide ) {
+        reel_it_for_each_site( 'reel_it_activate_site' );
+        return;
+    }
+    reel_it_activate_site();
+}
+
+/**
+ * Run a lifecycle operation on each site without retaining all site IDs in memory.
+ *
+ * @param callable $callback Site-scoped lifecycle callback.
+ */
+function reel_it_for_each_site( $callback ) {
+    $offset = 0;
+    do {
+        $site_ids = get_sites( array( 'network_id' => get_current_network_id(), 'fields' => 'ids', 'number' => 100, 'offset' => $offset, 'orderby' => 'id', 'order' => 'ASC' ) );
+        foreach ( $site_ids as $site_id ) {
+            switch_to_blog( $site_id );
+            try {
+                call_user_func( $callback );
+            } finally {
+                restore_current_blog();
+            }
+        }
+        $offset += 100;
+    } while ( count( $site_ids ) === 100 );
+}
+
+/** Create tables and schedule retention for the current site. */
+function reel_it_activate_site() {
     require_once plugin_dir_path( __FILE__ ) . 'includes/class-reel-it-database.php';
     require_once plugin_dir_path( __FILE__ ) . 'includes/class-reel-it-analytics.php';
     
@@ -71,10 +101,38 @@ add_action( 'admin_init', 'reel_it_check_db_upgrade' );
 /**
  * Deactivation hook — clean up scheduled events.
  */
-function reel_it_deactivate() {
+function reel_it_deactivate( $network_wide = false ) {
+    if ( is_multisite() && $network_wide ) {
+        reel_it_for_each_site( 'reel_it_deactivate_site' );
+        return;
+    }
+    reel_it_deactivate_site();
+}
+
+/** Remove the current site's scheduled events. */
+function reel_it_deactivate_site() {
     wp_clear_scheduled_hook( 'reel_it_daily_prune' );
 }
 register_deactivation_hook( __FILE__, 'reel_it_deactivate' );
+
+/**
+ * Initialize sites created after network activation.
+ *
+ * @param WP_Site $site Newly initialized site.
+ */
+function reel_it_initialize_site( $site ) {
+    $network_plugins = get_network_option( $site->network_id, 'active_sitewide_plugins', array() );
+    if ( ! isset( $network_plugins[ plugin_basename( __FILE__ ) ] ) ) {
+        return;
+    }
+    switch_to_blog( $site->blog_id );
+    try {
+        reel_it_activate_site();
+    } finally {
+        restore_current_blog();
+    }
+}
+add_action( 'wp_initialize_site', 'reel_it_initialize_site', 200 );
 
 /**
  * Cron callback: prune analytics rows older than 90 days.

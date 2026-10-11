@@ -79,16 +79,9 @@ class Reel_It_Settings {
             return;
         }
 
-        // Enqueue Media Library
-        wp_enqueue_media();
-
-        // Google Fonts: Plus Jakarta Sans
-        wp_enqueue_style( 
-            'reel-it-fonts', 
-            'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap', 
-            array(), 
-            $this->version 
-        );
+        if ( 'toplevel_page_reel-it' === $hook_suffix ) {
+            wp_enqueue_media();
+        }
 
         wp_enqueue_style(
             'reel-it-settings-modern',
@@ -96,6 +89,14 @@ class Reel_It_Settings {
             array(),
             $this->version,
             'all'
+        );
+
+        wp_register_script(
+            'reel-it-utils',
+            plugin_dir_url( __FILE__ ) . 'js/reel-it-utils.js',
+            array(),
+            $this->version,
+            true
         );
         
         wp_enqueue_script(
@@ -316,7 +317,7 @@ class Reel_It_Settings {
         if ( isset( $input['video_gap'] ) ) { $sanitized['video_gap'] = max( 0, min( 100, intval( $input['video_gap'] ) ) ); }
         if ( isset( $input['default_videos_per_row'] ) ) { $sanitized['default_videos_per_row'] = max( 1, min( 6, intval( $input['default_videos_per_row'] ) ) ); }
         // Why: zero or negative values would block all uploads.
-        if ( isset( $input['max_file_size'] ) ) { $sanitized['max_file_size'] = max( 1, intval( $input['max_file_size'] ) ); }
+        if ( isset( $input['max_file_size'] ) ) { $sanitized['max_file_size'] = max( 1, min( 2048, intval( $input['max_file_size'] ) ) ); }
         $sanitized['allowed_formats'] = array();
         if ( isset( $input['allowed_formats'] ) && is_array( $input['allowed_formats'] ) ) {
             $valid_formats = array( 'mp4', 'webm', 'ogg', 'mov', 'avi' );

@@ -56,6 +56,21 @@ Follow WordPress coding standards:
 
 ### Testing
 
+Run the JavaScript regression tests with Node.js 22.22.2+ (or 24.15+):
+
+```bash
+npm ci
+npm test
+```
+
+For PHP integration tests, install Composer dependencies and configure the WordPress test suite:
+
+```bash
+composer install
+WP_TESTS_DIR=/path/to/wordpress-tests-lib composer test
+WP_MULTISITE=1 WP_TESTS_DIR=/path/to/wordpress-tests-lib composer test
+```
+
 - Test your changes thoroughly
 - Test with different WordPress versions
 - Test with different PHP versions
